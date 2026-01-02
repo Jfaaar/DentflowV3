@@ -15,7 +15,7 @@ interface LoginPageProps {
 type AuthMethod = 'email' | 'phone' | 'password';
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onRegisterClick }) => {
-  const { login, isLoading, error } = useAuth();
+  const { login, isLoading, error, setPhoneUser } = useAuth();
   const { t } = useLanguage();
   const [authMethod, setAuthMethod] = useState<AuthMethod>('email');
   const [email, setEmail] = useState('');
@@ -26,9 +26,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onRegisterClick }) => {
     await login({ email, password });
   };
 
-  const handlePhoneSuccess = (userId: string, needsProfileSetup: boolean) => {
-    // Phone auth successful - the auth state change will handle the rest
+  const handlePhoneSuccess = (userId: string, needsProfileSetup: boolean, phone?: string) => {
     console.log('Phone auth success:', userId, 'needs setup:', needsProfileSetup);
+    // Update auth state - this will trigger navigation
+    setPhoneUser(userId, phone || '', needsProfileSetup);
   };
 
   return (
@@ -47,8 +48,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onRegisterClick }) => {
           <button
             onClick={() => setAuthMethod('email')}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${authMethod === 'email'
-                ? 'bg-white text-primary-600 shadow-sm'
-                : 'text-surface-600 hover:text-surface-900'
+              ? 'bg-white text-primary-600 shadow-sm'
+              : 'text-surface-600 hover:text-surface-900'
               }`}
           >
             <Mail size={16} />
@@ -57,8 +58,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onRegisterClick }) => {
           <button
             onClick={() => setAuthMethod('phone')}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${authMethod === 'phone'
-                ? 'bg-white text-primary-600 shadow-sm'
-                : 'text-surface-600 hover:text-surface-900'
+              ? 'bg-white text-primary-600 shadow-sm'
+              : 'text-surface-600 hover:text-surface-900'
               }`}
           >
             <Phone size={16} />

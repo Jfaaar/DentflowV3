@@ -5,7 +5,7 @@ import { authService } from '../../../lib/services/auth';
 import { OTPInput } from './OTPInput';
 
 interface PhoneLoginFormProps {
-    onSuccess?: (userId: string, needsProfileSetup: boolean) => void;
+    onSuccess?: (userId: string, needsProfileSetup: boolean, phone?: string) => void;
 }
 
 type Step = 'phone' | 'otp';
@@ -96,7 +96,7 @@ export const PhoneLoginForm: React.FC<PhoneLoginFormProps> = ({ onSuccess }) => 
         setIsLoading(false);
 
         if (result.success) {
-            onSuccess?.(result.userId!, result.needsProfileSetup || false);
+            onSuccess?.(result.userId!, result.needsProfileSetup || false, fullPhoneNumber);
         } else {
             setError(result.error || 'Verification failed');
         }

@@ -35,6 +35,7 @@ interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (credentials: RegisterCredentials) => Promise<void>;
   logout: () => Promise<void>;
+  setPhoneUser: (userId: string, phone: string, needsSetup: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -200,8 +201,38 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
   };
 
+  // Handle phone auth users (Firebase-based)
+  const setPhoneUser = (userId: string, phone: string, needsSetup: boolean) => {
+    if (needsSetup) {
+      // User needs to complete registration - store phone for later
+      setState({
+        user: {
+          id: userId,
+          email: '',
+          name: 'Phone User',
+          role: 'assistant',
+          phone,
+          needsProfileSetup: true,
+        } as User & { phone: string; needsProfileSetup: boolean },
+        isAuthenticated: true,
+        isLoading: false,
+        error: null,
+      });
+    } else {
+      // User has a profile - fetch it
+      fetchUserProfile(userId).then(profile => {
+        setState({
+          user: profile,
+          isAuthenticated: !!profile,
+          isLoading: false,
+          error: null,
+        });
+      });
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ ...state, login, register, logout }}>
+    <AuthContext.Provider value={{ ...state, login, register, logout, setPhoneUser }}>
       {children}
     </AuthContext.Provider>
   );
