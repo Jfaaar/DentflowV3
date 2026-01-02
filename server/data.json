@@ -1,0 +1,83 @@
+{
+  "users": [
+    {
+      "id": "u1",
+      "email": "assistant@clinic.com",
+      "name": "Dr. Assistant",
+      "role": "assistant",
+      "password": "password"
+    },
+    {
+      "id": "u2",
+      "email": "demo",
+      "name": "Demo Doctor",
+      "role": "doctor",
+      "password": "demo"
+    },
+    {
+      "id": "u0",
+      "email": "admin@dentflow.com",
+      "name": "Super Admin",
+      "role": "super_admin",
+      "password": "admin"
+    },
+    {
+      "id": "wcdu6mhy8",
+      "email": "jaafarasri3@gmail.com",
+      "password": "aa",
+      "name": "aa",
+      "role": "clinic_admin",
+      "clinicId": "0dsc4jxo8"
+    },
+    {
+      "id": "bl26dh6da",
+      "email": "aa@aa.aa",
+      "password": "aa",
+      "name": "aa",
+      "role": "clinic_admin",
+      "clinicId": "1wgmusbeo"
+    },
+    {
+      "id": "y8zbxc438",
+      "email": "dadw@feff.ff",
+      "password": "hasna",
+      "name": "hasna",
+      "role": "assistant",
+      "clinicId": "0dsc4jxo8"
+    }
+  ],
+  "patients": [
+    {
+      "id": "p1",
+      "name": "Sarah Connor",
+      "phone": "555-0199",
+      "email": "sarah@example.com"
+    },
+    {
+      "id": "p2",
+      "name": "John Wick",
+      "phone": "555-0122",
+      "email": "john@continental.com"
+    }
+  ],
+  "appointments": [],
+  "invoices": [],
+  "clinics": [
+    {
+      "id": "0dsc4jxo8",
+      "name": "jnbj",
+      "address": "jjj",
+      "maxStaff": 5,
+      "subscriptionStatus": "active",
+      "createdAt": "2025-12-15T16:37:11.226Z"
+    },
+    {
+      "id": "1wgmusbeo",
+      "name": "aa",
+      "address": "aa",
+      "maxStaff": 5,
+      "subscriptionStatus": "active",
+      "createdAt": "2025-12-15T16:38:16.480Z"
+    }
+  ]
+}

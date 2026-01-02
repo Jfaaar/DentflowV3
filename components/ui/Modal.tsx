@@ -1,0 +1,88 @@
+import React, { useEffect, useRef } from 'react';
+import { X } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { cn } from '../../lib/utils';
+
+interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl';
+  className?: string;
+  closeOnOutsideClick?: boolean;
+}
+
+export const Modal: React.FC<ModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  title, 
+  children, 
+  maxWidth = 'md', 
+  className,
+  closeOnOutsideClick = true 
+}) => {
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, onClose]);
+
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (closeOnOutsideClick && e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  if (!isOpen) return null;
+
+  const sizeClasses = {
+    sm: 'max-w-sm',
+    md: 'max-w-md',
+    lg: 'max-w-lg',
+    xl: 'max-w-xl',
+    '2xl': 'max-w-2xl',
+    '3xl': 'max-w-3xl',
+    '4xl': 'max-w-4xl',
+    '5xl': 'max-w-5xl',
+  };
+
+  return createPortal(
+    <div 
+      className={cn("fixed inset-0 z-[100] flex items-center justify-center p-4 bg-surface-900/50 dark:bg-black/70 backdrop-blur-sm animate-fade-in", className)}
+      onClick={handleBackdropClick}
+    >
+      <div
+        ref={modalRef}
+        className={cn(
+          "bg-white dark:bg-surface-900 rounded-2xl shadow-2xl w-full max-h-[95vh] flex flex-col overflow-hidden animate-slide-up ring-1 ring-surface-900/5 dark:ring-white/10",
+          sizeClasses[maxWidth]
+        )}
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-surface-100 dark:border-surface-800 bg-white/50 dark:bg-surface-900/50 backdrop-blur-xl sticky top-0 z-10">
+          <h2 className="text-lg font-bold text-surface-900 dark:text-surface-100 tracking-tight">{title}</h2>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-surface-100 dark:hover:bg-surface-800 text-surface-500 dark:text-surface-400 transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <div className="p-6 overflow-y-auto custom-scrollbar">
+          {children}
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
