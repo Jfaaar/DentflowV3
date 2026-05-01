@@ -1,12 +1,19 @@
 
 export type UserRole = 'super_admin' | 'clinic_admin' | 'doctor' | 'assistant';
 
+export type SubscriptionStatus =
+  | 'trial'
+  | 'active'
+  | 'past_due'
+  | 'suspended'
+  | 'cancelled';
+
 export interface Clinic {
   id: string;
   name: string;
   address: string;
   maxStaff: number;
-  subscriptionStatus: 'active' | 'inactive';
+  subscriptionStatus: SubscriptionStatus;
   createdAt: string;
 }
 
@@ -183,4 +190,118 @@ export interface DaySummary {
   pending: number;
   canceled: number;
   appointments: Appointment[];
+}
+
+// ─── Phase 2 additions (Supabase migration) ────────────────────────────────
+// New entities backing the clinical tables defined in supabase/migrations/0002.
+
+export type PatientStatus = 'active' | 'archived' | 'deceased' | 'transferred';
+
+export interface ClinicalNote {
+  id: string;
+  clinicId: string;
+  patientId: string;
+  doctorId: string;
+  appointmentId?: string;
+  consultationReason?: string;
+  symptoms?: string;
+  diagnosis?: string;
+  notes?: string;
+  treatmentPlan?: string;
+  followUp?: string;
+  vitals?: Record<string, number | string>;
+  signedAt?: string; // locked when set
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DentalChartEntry {
+  id: string;
+  clinicId: string;
+  patientId: string;
+  tooth: string;
+  surface?: string;
+  finding: string;
+  notes?: string;
+  recordedAt: string;
+  recordedBy?: string;
+}
+
+export interface TreatmentPlan {
+  id: string;
+  clinicId: string;
+  patientId: string;
+  doctorId?: string;
+  title?: string;
+  status: 'draft' | 'proposed' | 'accepted' | 'rejected' | 'completed' | 'canceled';
+  estimatedTotal?: number;
+  discount?: number;
+  insuranceCovered?: number;
+  patientResponsibility?: number;
+  acceptedAt?: string;
+}
+
+export interface InsurancePolicy {
+  id: string;
+  clinicId: string;
+  patientId: string;
+  providerId?: string;
+  policyNumber?: string;
+  coveragePct?: number;
+  validUntil?: string;
+}
+
+export interface InsuranceClaim {
+  id: string;
+  clinicId: string;
+  patientId: string;
+  invoiceId?: string;
+  policyId?: string;
+  status:
+    | 'draft'
+    | 'submitted'
+    | 'accepted'
+    | 'rejected'
+    | 'paid'
+    | 'partially_paid';
+  submittedAt?: string;
+  amountClaimed?: number;
+  amountReimbursed?: number;
+  notes?: string;
+}
+
+export interface ClinicDocument {
+  id: string;
+  clinicId: string;
+  patientId?: string;
+  appointmentId?: string;
+  category:
+    | 'radiology'
+    | 'consent'
+    | 'insurance'
+    | 'certificate'
+    | 'prescription_pdf'
+    | 'invoice_pdf'
+    | 'plan_pdf'
+    | 'other';
+  fileName: string;
+  storagePath: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  uploadedBy?: string;
+  createdAt: string;
+}
+
+export interface AuditLog {
+  id: string;
+  clinicId?: string;
+  userId?: string;
+  action: string;
+  entityType: string;
+  entityId?: string;
+  oldValues?: unknown;
+  newValues?: unknown;
+  ipAddress?: string;
+  userAgent?: string;
+  createdAt: string;
 }
