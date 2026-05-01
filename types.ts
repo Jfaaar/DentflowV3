@@ -305,3 +305,59 @@ export interface AuditLog {
   userAgent?: string;
   createdAt: string;
 }
+// ─── Phase 3 UI helper types (Agent D) ─────────────────────────────────────
+// These are auxiliary shapes consumed by features/clinical, features/treatments,
+// features/insurance, and features/prescriptions. They DO NOT replace the
+// canonical types above (ClinicalNote, DentalChartEntry, TreatmentPlan,
+// InsurancePolicy, InsuranceClaim) — those follow the Supabase migration schema.
+
+export interface Vitals {
+  bloodPressure?: string;
+  heartRate?: number;
+  temperature?: number;
+  weight?: number;
+  height?: number;
+}
+
+export type ToothCondition =
+  | 'healthy'
+  | 'caries'
+  | 'filling'
+  | 'crown'
+  | 'extraction'
+  | 'implant'
+  | 'rootCanal'
+  | 'missing'
+  | 'fracture'
+  | 'other';
+
+export interface TreatmentPlanItem {
+  id: string;
+  planId: string;
+  toothId?: string;
+  description: string;
+  price: number;
+  quantity: number;
+  estimatedDuration?: number;
+  status?: 'planned' | 'completed';
+}
+
+export interface TreatmentMaterial {
+  id?: string;
+  treatmentId: string;
+  itemId: string;
+  itemName?: string;
+  quantity: number;
+  clinicId: string;
+}
+
+export interface InsuranceProvider {
+  id: string;
+  name: string;
+  code?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  defaultCoveragePct?: number;
+  clinicId?: string | null;
+  createdAt?: string;
+}

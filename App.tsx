@@ -24,6 +24,15 @@ import { InvoicesPage } from './features/invoices/InvoicesPage';
 import { InventoryPage } from './features/inventory/InventoryPage';
 import { TeamPage } from './features/settings/TeamPage';
 
+// Phase 3 clinical pages
+import { ClinicalNoteEditor } from './features/clinical/ClinicalNoteEditor';
+import { DentalChart } from './features/clinical/DentalChart';
+import { TreatmentPlanPage } from './features/treatments/TreatmentPlanPage';
+import { InsuranceTab } from './features/insurance/InsuranceTab';
+import { PrescriptionEditor } from './features/prescriptions/PrescriptionEditor';
+import { RequirePermission } from './features/auth/RouteGuards';
+import { useParams } from 'react-router-dom';
+
 import { BackofficeSidebar } from './features/backoffice/BackofficeSidebar';
 import { ClinicsPage } from './features/backoffice/ClinicsPage';
 import { ClinicDetailsPage } from './features/backoffice/ClinicDetailsPage';
@@ -63,6 +72,17 @@ const ClinicShell: React.FC = () => {
       <Outlet />
     </Layout>
   );
+};
+
+// Patient-scoped wrapper: pulls :patientId from the URL and passes it to a
+// page component. `onBack` returns to the patient list.
+const PatientScopedRoute: React.FC<{
+  Component: React.FC<{ patientId: string; patientName?: string; onBack: () => void }>;
+}> = ({ Component }) => {
+  const { patientId } = useParams<{ patientId: string }>();
+  const navigate = useNavigate();
+  if (!patientId) return <Navigate to="/app/patients" replace />;
+  return <Component patientId={patientId} onBack={() => navigate('/app/patients')} />;
 };
 
 const SettingsPlaceholder: React.FC = () => (
@@ -158,8 +178,32 @@ const AppRoutes: React.FC = () => (
           <Route path="calendar" element={<CalendarPage />} />
           <Route path="patients" element={<PatientsPage />} />
           <Route path="patients/:patientId" element={<PatientsPage />} />
+          <Route element={<RequirePermission permission="clinical.view" />}>
+            <Route
+              path="patients/:patientId/clinical"
+              element={<PatientScopedRoute Component={ClinicalNoteEditor} />}
+            />
+          </Route>
+          <Route element={<RequirePermission permission="dentalChart.view" />}>
+            <Route
+              path="patients/:patientId/dental-chart"
+              element={<PatientScopedRoute Component={DentalChart} />}
+            />
+          </Route>
+          <Route element={<RequirePermission permission="insurance.view" />}>
+            <Route
+              path="patients/:patientId/insurance"
+              element={<PatientScopedRoute Component={InsuranceTab} />}
+            />
+          </Route>
           <Route path="invoices" element={<InvoicesPage />} />
           <Route path="inventory" element={<InventoryPage />} />
+          <Route element={<RequirePermission permission="treatments.view" />}>
+            <Route path="treatments" element={<TreatmentPlanPage />} />
+          </Route>
+          <Route element={<RequirePermission permission="prescriptions.view" />}>
+            <Route path="prescriptions" element={<PrescriptionEditor />} />
+          </Route>
           <Route path="team" element={<TeamPage />} />
           <Route path="settings" element={<SettingsPlaceholder />} />
         </Route>

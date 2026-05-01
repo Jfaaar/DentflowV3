@@ -1,6 +1,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Calendar, Users, Settings, LogOut, Activity, LayoutDashboard, Languages, Check, ChevronUp, Moon, Sun, Receipt, ChevronLeft, ChevronRight, Package } from 'lucide-react';
+import { Calendar, Users, Settings, LogOut, Activity, LayoutDashboard, Languages, Check, ChevronUp, Moon, Sun, Receipt, ChevronLeft, ChevronRight, Package, Stethoscope, Pill } from 'lucide-react';
+import { hasPermission } from '../../lib/permissions';
+import { useAuth } from '../../features/auth/useAuth';
 import { cn } from '../../lib/utils';
 import { useLanguage } from '../../features/language/LanguageContext';
 import { useTheme } from '../../features/theme/ThemeContext';
@@ -17,19 +19,26 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onNavigate, onLogout, className, onMobileClose }) => {
   const { t, language, setLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
+  const { user } = useAuth();
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(true); // Default to collapsed
   const langMenuRef = useRef<HTMLDivElement>(null);
 
-  const navItems = [
+  const baseItems = [
     { id: 'dashboard', label: 'dashboard', icon: LayoutDashboard },
     { id: 'calendar', label: 'calendar', icon: Calendar },
     { id: 'patients', label: 'patients', icon: Users },
     { id: 'invoices', label: 'invoices', icon: Receipt },
-    { id: 'inventory', icon: Package, label: 'Inventory' },
+    { id: 'inventory', icon: Package, label: 'inventory' },
+    // Phase 3 — Clinical
+    ...(hasPermission(user?.role, 'treatments.view')
+      ? [{ id: 'treatments', label: 'treatments', icon: Stethoscope }] : []),
+    ...(hasPermission(user?.role, 'prescriptions.view')
+      ? [{ id: 'prescriptions', label: 'prescriptions', icon: Pill }] : []),
     { id: 'team', icon: Users, label: 'Team' },
-    { id: 'settings', icon: Settings, label: 'Settings' },
+    { id: 'settings', icon: Settings, label: 'settings' },
   ];
+  const navItems = baseItems;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

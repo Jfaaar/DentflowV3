@@ -33,11 +33,19 @@ export type Permission =
   | 'clinical.update'
   | 'clinical.sign'
   | 'clinical.unlock'
+  | 'clinical.delete'
+
+  // Dental chart
+  | 'dentalChart.view'
+  | 'dentalChart.update'
 
   // Treatments / quotes
   | 'treatments.view'
   | 'treatments.create'
   | 'treatments.update'
+  | 'treatments.accept'
+  | 'treatments.convert'
+  | 'treatments.delete'
   | 'quotes.view'
   | 'quotes.create'
   | 'quotes.send'
@@ -46,6 +54,7 @@ export type Permission =
   | 'prescriptions.view'
   | 'prescriptions.create'
   | 'prescriptions.sign'
+  | 'prescriptions.delete'
 
   // Invoices / payments
   | 'invoices.view'
@@ -59,6 +68,7 @@ export type Permission =
   | 'insurance.view'
   | 'insurance.submit'
   | 'insurance.update'
+  | 'insurance.reimburse'
 
   // Inventory
   | 'inventory.view'
@@ -105,13 +115,14 @@ const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[] | '*'> = {
   clinic_admin: [
     'patients.view', 'patients.create', 'patients.update', 'patients.archive', 'patients.delete', 'patients.export',
     'appointments.view', 'appointments.create', 'appointments.update', 'appointments.cancel', 'appointments.checkin',
-    'clinical.view', 'clinical.create', 'clinical.update', 'clinical.sign', 'clinical.unlock',
-    'treatments.view', 'treatments.create', 'treatments.update',
+    'clinical.view', 'clinical.create', 'clinical.update', 'clinical.sign', 'clinical.unlock', 'clinical.delete',
+    'dentalChart.view', 'dentalChart.update',
+    'treatments.view', 'treatments.create', 'treatments.update', 'treatments.accept', 'treatments.convert', 'treatments.delete',
     'quotes.view', 'quotes.create', 'quotes.send',
-    'prescriptions.view', 'prescriptions.create',
+    'prescriptions.view', 'prescriptions.create', 'prescriptions.delete',
     'invoices.view', 'invoices.create', 'invoices.update', 'invoices.cancel',
     'payments.record', 'payments.refund',
-    'insurance.view', 'insurance.submit', 'insurance.update',
+    'insurance.view', 'insurance.submit', 'insurance.update', 'insurance.reimburse',
     'inventory.view', 'inventory.create', 'inventory.update', 'inventory.adjust', 'inventory.purchase',
     'suppliers.manage',
     'documents.view', 'documents.upload', 'documents.delete',
@@ -124,11 +135,12 @@ const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[] | '*'> = {
     'patients.view', 'patients.create', 'patients.update',
     'appointments.view', 'appointments.create', 'appointments.update', 'appointments.cancel', 'appointments.checkin',
     'clinical.view', 'clinical.create', 'clinical.update', 'clinical.sign',
-    'treatments.view', 'treatments.create', 'treatments.update',
+    'dentalChart.view', 'dentalChart.update',
+    'treatments.view', 'treatments.create', 'treatments.update', 'treatments.accept', 'treatments.convert',
     'quotes.view', 'quotes.create', 'quotes.send',
     'prescriptions.view', 'prescriptions.create', 'prescriptions.sign',
     'invoices.view', 'invoices.create',
-    'insurance.view',
+    'insurance.view', 'insurance.update', 'insurance.submit', 'insurance.reimburse',
     'inventory.view',
     'documents.view', 'documents.upload',
     'reports.view',
@@ -140,6 +152,7 @@ const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[] | '*'> = {
     'patients.view', 'patients.create', 'patients.update',
     'appointments.view', 'appointments.create', 'appointments.update', 'appointments.cancel', 'appointments.checkin',
     'clinical.view',
+    'dentalChart.view',
     'treatments.view',
     'quotes.view',
     'prescriptions.view',
