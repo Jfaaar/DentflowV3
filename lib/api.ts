@@ -3,6 +3,7 @@
 import { Appointment, Patient, User, Invoice, Radio, Treatment, Quote, InventoryItem, Prescription, InventoryTransaction, Supplier, Clinic } from "../types";
 import { storage } from "./storage";
 import { supabase } from "./supabase";
+import { apiUrl } from "./apiBase";
 
 // Helper to simulate network latency for a realistic UX (spinners, etc.)
 const delay = (ms = 400) => new Promise(resolve => setTimeout(resolve, ms));
@@ -16,7 +17,7 @@ const getAccessToken = async (): Promise<string | null> => {
 export const api = {
     auth: {
         login: async (credentials: any): Promise<{ user: User, token: string }> => {
-            const response = await fetch('http://localhost:3001/api/auth/login', {
+            const response = await fetch(apiUrl('/api/auth/login'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(credentials)
@@ -32,7 +33,7 @@ export const api = {
             return { user: data.user, token: data.token };
         },
         register: async (credentials: any): Promise<User> => {
-            const response = await fetch('http://localhost:3001/api/auth/register', {
+            const response = await fetch(apiUrl('/api/auth/register'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(credentials)
@@ -53,7 +54,7 @@ export const api = {
     backoffice: {
         listClinics: async (): Promise<Clinic[]> => {
             const token = await getAccessToken();
-            const response = await fetch('http://localhost:3001/api/backoffice/clinics', {
+            const response = await fetch(apiUrl('/api/backoffice/clinics'), {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -63,7 +64,7 @@ export const api = {
         },
         createClinic: async (data: any): Promise<any> => {
             const token = await getAccessToken();
-            const response = await fetch('http://localhost:3001/api/backoffice/clinics', {
+            const response = await fetch(apiUrl('/api/backoffice/clinics'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -79,7 +80,7 @@ export const api = {
         },
         updateClinic: async (id: string, data: any): Promise<Clinic> => {
             const token = await getAccessToken();
-            const response = await fetch(`http://localhost:3001/api/backoffice/clinics/${id}`, {
+            const response = await fetch(apiUrl(`/api/backoffice/clinics/${id}`), {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -92,7 +93,7 @@ export const api = {
         },
         deleteClinic: async (id: string): Promise<boolean> => {
             const token = await getAccessToken();
-            const response = await fetch(`http://localhost:3001/api/backoffice/clinics/${id}`, {
+            const response = await fetch(apiUrl(`/api/backoffice/clinics/${id}`), {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -103,7 +104,7 @@ export const api = {
         },
         getStats: async (): Promise<{ totalClinics: number, totalUsers: number, activeSubscriptions: number }> => {
             const token = await getAccessToken();
-            const response = await fetch('http://localhost:3001/api/backoffice/stats', {
+            const response = await fetch(apiUrl('/api/backoffice/stats'), {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -113,7 +114,7 @@ export const api = {
         },
         getClinicUsers: async (clinicId: string): Promise<User[]> => {
             const token = await getAccessToken();
-            const response = await fetch(`http://localhost:3001/api/backoffice/clinics/${clinicId}/users`, {
+            const response = await fetch(apiUrl(`/api/backoffice/clinics/${clinicId}/users`), {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -123,7 +124,7 @@ export const api = {
         },
         resetUserPassword: async (userId: string, password: string): Promise<boolean> => {
             const token = await getAccessToken();
-            const response = await fetch(`http://localhost:3001/api/backoffice/users/${userId}/reset-password`, {
+            const response = await fetch(apiUrl(`/api/backoffice/users/${userId}/reset-password`), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -136,7 +137,7 @@ export const api = {
         },
         updateUserRole: async (userId: string, role: string): Promise<User> => {
             const token = await getAccessToken();
-            const response = await fetch(`http://localhost:3001/api/backoffice/users/${userId}/role`, {
+            const response = await fetch(apiUrl(`/api/backoffice/users/${userId}/role`), {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -149,7 +150,7 @@ export const api = {
         },
         createClinicUser: async (clinicId: string, data: any): Promise<User> => {
             const token = await getAccessToken();
-            const response = await fetch(`http://localhost:3001/api/backoffice/clinics/${clinicId}/users`, {
+            const response = await fetch(apiUrl(`/api/backoffice/clinics/${clinicId}/users`), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -165,7 +166,7 @@ export const api = {
         },
         updateUser: async (userId: string, data: any): Promise<User> => {
             const token = await getAccessToken();
-            const response = await fetch(`http://localhost:3001/api/backoffice/users/${userId}`, {
+            const response = await fetch(apiUrl(`/api/backoffice/users/${userId}`), {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -178,7 +179,7 @@ export const api = {
         },
         deleteUser: async (userId: string): Promise<boolean> => {
             const token = await getAccessToken();
-            const response = await fetch(`http://localhost:3001/api/backoffice/users/${userId}`, {
+            const response = await fetch(apiUrl(`/api/backoffice/users/${userId}`), {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -191,7 +192,7 @@ export const api = {
     staff: {
         create: async (data: any): Promise<User> => {
             const token = await getAccessToken();
-            const response = await fetch('http://localhost:3001/api/staff', {
+            const response = await fetch(apiUrl('/api/staff'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

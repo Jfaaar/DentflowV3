@@ -5,6 +5,7 @@ import { Input } from '../../components/ui/Input';
 import { Topbar } from '../../components/layout/Topbar';
 import { UserPlus, Trash2, Mail, Calendar, Shield, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { API_BASE_URL as API_URL } from '../../lib/apiBase';
 
 interface Customer {
     id: string;
@@ -15,8 +16,6 @@ interface Customer {
     last_sign_in?: string;
     provider?: string;
 }
-
-const API_URL = 'http://localhost:3001';
 
 export const CustomersPage: React.FC = () => {
     const [customers, setCustomers] = useState<Customer[]>([]);

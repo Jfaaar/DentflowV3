@@ -1,12 +1,19 @@
 
 export type UserRole = 'super_admin' | 'clinic_admin' | 'doctor' | 'assistant';
 
+export type SubscriptionStatus =
+  | 'trial'
+  | 'active'
+  | 'past_due'
+  | 'suspended'
+  | 'cancelled';
+
 export interface Clinic {
   id: string;
   name: string;
   address: string;
   maxStaff: number;
-  subscriptionStatus: 'active' | 'inactive';
+  subscriptionStatus: SubscriptionStatus;
   createdAt: string;
 }
 
