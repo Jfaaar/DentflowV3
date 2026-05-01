@@ -4,8 +4,7 @@
  */
 
 import { supabase } from '../supabase';
-
-const API_URL = 'http://localhost:3001';
+import { API_BASE_URL as API_URL } from '../apiBase';
 
 // Get Supabase access token for authenticated API calls
 const getAccessToken = async (): Promise<string | null> => {

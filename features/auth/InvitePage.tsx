@@ -3,8 +3,7 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Building2, Loader2, CheckCircle, XCircle } from 'lucide-react';
-
-const API_URL = 'http://localhost:3001';
+import { API_BASE_URL as API_URL } from '../../lib/apiBase';
 
 interface InviteData {
     email: string;

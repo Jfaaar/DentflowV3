@@ -5,6 +5,7 @@ import { Input } from '../../components/ui/Input';
 import { Topbar } from '../../components/layout/Topbar';
 import { Building2, Plus, MapPin, Phone, Mail, Calendar, Loader2, Users } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { API_BASE_URL as API_URL } from '../../lib/apiBase';
 
 interface Clinic {
     id: string;
@@ -15,8 +16,6 @@ interface Clinic {
     subscription_status: string;
     created_at: string;
 }
-
-const API_URL = 'http://localhost:3001';
 
 export const ClinicsPage: React.FC = () => {
     const [clinics, setClinics] = useState<Clinic[]>([]);
