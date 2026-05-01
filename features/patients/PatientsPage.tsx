@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Topbar } from '../../components/layout/Topbar';
 import { Button } from '../../components/ui/Button';
 import { api } from '../../lib/api';
+import { patientsService } from '../../lib/services';
 import { Patient, Appointment, Invoice } from '../../types';
 import { Search, UserPlus, Pencil, Trash2, Phone, Mail, Loader2, MessageCircle, CalendarPlus, User, Archive, CheckCircle, Undo2 } from 'lucide-react';
 import { PatientFormModal } from './components/PatientFormModal';
@@ -10,17 +11,25 @@ import { AppointmentModal } from '../appointments/AppointmentModal';
 import { useLanguage } from '../language/LanguageContext';
 import { cn, formatDate } from '../../lib/utils';
 
+const PAGE_SIZE = 24;
+
 export const PatientsPage: React.FC = () => {
   const { t, language } = useLanguage();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  
+
+  // Pagination
+  const [page, setPage] = useState(0);
+  const [totalActive, setTotalActive] = useState(0);
+  const [totalArchived, setTotalArchived] = useState(0);
+
   // New State for Archive View
   const [viewMode, setViewMode] = useState<'active' | 'archived'>('active');
-  
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | undefined>(undefined);
   const [viewingPatient, setViewingPatient] = useState<Patient | null>(null);
@@ -28,52 +37,89 @@ export const PatientsPage: React.FC = () => {
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
   const [editingAppt, setEditingAppt] = useState<Appointment | undefined>(undefined);
 
-  const refreshData = async () => {
+  // Debounce the search input -> server query
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  // Reset to first page whenever search/view changes
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedSearch, viewMode]);
+
+  const fetchPatients = useCallback(async () => {
+    setIsLoading(true);
     try {
-        const [pats, appts, invs] = await Promise.all([
-            api.patients.list(),
-            api.appointments.list(),
-            api.invoices.list()
-        ]);
-        setPatients(pats);
-        setAppointments(appts);
-        setInvoices(invs);
+      const [activeRes, archivedRes] = await Promise.all([
+        viewMode === 'active'
+          ? patientsService.list({
+              page,
+              pageSize: PAGE_SIZE,
+              search: debouncedSearch || undefined,
+              filters: { status: 'active' },
+            })
+          : patientsService.list({
+              page: 0,
+              pageSize: 1,
+              filters: { status: 'active' },
+            }),
+        viewMode === 'archived'
+          ? patientsService.list({
+              page,
+              pageSize: PAGE_SIZE,
+              search: debouncedSearch || undefined,
+              filters: { status: 'archived' },
+            })
+          : patientsService.list({
+              page: 0,
+              pageSize: 1,
+              filters: { status: 'archived' },
+            }),
+      ]);
+      setPatients(viewMode === 'active' ? activeRes.data : archivedRes.data);
+      setTotalActive(activeRes.total);
+      setTotalArchived(archivedRes.total);
     } catch (e) {
-        console.error("Failed to load data", e);
+      console.error('Failed to load patients', e);
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
-  };
+  }, [viewMode, page, debouncedSearch]);
+
+  const refreshData = useCallback(async () => {
+    try {
+      const [appts, invs] = await Promise.all([
+        api.appointments.list(),
+        api.invoices.list(),
+      ]);
+      setAppointments(appts);
+      setInvoices(invs);
+    } catch (e) {
+      console.error('Failed to load appointments/invoices', e);
+    }
+    await fetchPatients();
+  }, [fetchPatients]);
 
   useEffect(() => {
-    refreshData();
+    fetchPatients();
+  }, [fetchPatients]);
+
+  useEffect(() => {
+    // Load auxiliary data once.
+    api.appointments.list().then(setAppointments).catch(console.error);
+    api.invoices.list().then(setInvoices).catch(console.error);
   }, []);
 
-  const filteredPatients = useMemo(() => {
-    let filtered = patients;
+  // Server-side filtering already applied; use the result as-is.
+  const filteredPatients = useMemo(() => patients, [patients]);
 
-    // 1. Filter by Status
-    if (viewMode === 'active') {
-        filtered = filtered.filter(p => p.status !== 'archived');
-    } else {
-        filtered = filtered.filter(p => p.status === 'archived');
-    }
-
-    // 2. Filter by Search
-    if (searchQuery) {
-        const lower = searchQuery.toLowerCase();
-        filtered = filtered.filter(p => 
-            p.name.toLowerCase().includes(lower) || 
-            p.phone.includes(lower) || 
-            (p.email && p.email.toLowerCase().includes(lower))
-        );
-    }
-    
-    return filtered;
-  }, [patients, searchQuery, viewMode]);
-
-  const activeCount = patients.filter(p => p.status !== 'archived').length;
-  const archivedCount = patients.filter(p => p.status === 'archived').length;
+  const activeCount = totalActive;
+  const archivedCount = totalArchived;
+  const totalPages = Math.max(
+    1,
+    Math.ceil((viewMode === 'active' ? totalActive : totalArchived) / PAGE_SIZE),
+  );
 
   const handleSavePatient = async (patient: Patient) => {
     setIsLoading(true);
@@ -421,7 +467,36 @@ export const PatientsPage: React.FC = () => {
                             );
                         })}
                     </div>
-                ) : (
+                ) : null}
+
+                {/* Pagination */}
+                {filteredPatients.length > 0 && totalPages > 1 && (
+                    <div className="flex items-center justify-between gap-2 pb-6">
+                        <span className="text-sm text-surface-500">
+                            Page {page + 1} of {totalPages}
+                        </span>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                                disabled={page === 0 || isLoading}
+                            >
+                                Previous
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                                disabled={page >= totalPages - 1 || isLoading}
+                            >
+                                Next
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
+                {filteredPatients.length === 0 && !isLoading && (
                     <div className="flex-1 flex flex-col items-center justify-center text-center py-12">
                         <div className="w-24 h-24 bg-surface-100 dark:bg-surface-800 rounded-full flex items-center justify-center mb-6">
                             {viewMode === 'archived' ? <Archive size={48} className="text-surface-300"/> : <User size={48} className="text-surface-300" />}
