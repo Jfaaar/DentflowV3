@@ -6,5 +6,7 @@
  * - adminService: Express API (can swap to Edge Functions, direct Supabase, etc.)
  */
 
-export { authService, type User, type Session } from './auth';
+export { authService, type AppUser } from './auth';
 export { adminService, type Customer } from './admin';
+export * as documentsService from './documents';
+export * as notificationsService from './notifications';

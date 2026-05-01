@@ -462,9 +462,6 @@ export const PatientDetailsModal: React.FC<PatientDetailsModalProps> = ({
             isOpen={showRadiologyGallery}
             onClose={() => setShowRadiologyGallery(false)}
             patientId={patient.id}
-            radios={radios}
-            onUploadSuccess={(newRadio) => setRadios(prev => [newRadio, ...prev])}
-            onDelete={(id) => setRadios(prev => prev.filter(r => r.id !== id))}
         />
     )}
     </>

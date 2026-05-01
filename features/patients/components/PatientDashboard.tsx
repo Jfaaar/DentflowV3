@@ -1,20 +1,22 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Patient, Appointment, Invoice, Radio, Treatment, Payment, Prescription } from '../../../types';
+import { Patient, Appointment, Invoice, Treatment, Payment, Prescription } from '../../../types';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Input } from '../../../components/ui/Input';
 import { Modal } from '../../../components/ui/Modal';
 import { formatDate, formatTime, cn } from '../../../lib/utils';
-import { 
-  ArrowLeft, Phone, Mail, Calendar, Clock, FileText, Receipt, 
-  Image as ImageIcon, Activity, AlertCircle, MoreVertical, 
+import {
+  ArrowLeft, Phone, Mail, Calendar, Clock, FileText, Receipt,
+  Image as ImageIcon, Activity, AlertCircle, MoreVertical,
   Plus, Archive, Stethoscope, Coins,
   CheckCircle, MessageCircle, Trash2, Undo2, Loader2, Search, Pencil, Filter, User,
-  CreditCard, Printer, DollarSign, Download, ArrowUpRight, PlusCircle, Check, Pill
+  CreditCard, Printer, DollarSign, Download, ArrowUpRight, PlusCircle, Check, Pill,
+  FolderOpen
 } from 'lucide-react';
 import { useLanguage } from '../../language/LanguageContext';
 import { RadiologyGalleryModal } from './RadiologyGalleryModal';
+import { DocumentsTab } from './DocumentsTab';
 import { TreatmentFormModal } from './TreatmentFormModal';
 import { Odontogram } from './Odontogram';
 import { PaymentModal } from '../../invoices/components/PaymentModal';
@@ -22,6 +24,7 @@ import { PrescriptionModal } from '../../prescriptions/PrescriptionModal';
 import { PrescriptionPrintView } from '../../prescriptions/components/PrescriptionPrintView';
 import { api } from '../../../lib/api';
 import { storage } from '../../../lib/storage';
+import { list as listDocuments, type DocumentWithUrl } from '../../../lib/services/documents';
 
 interface PatientDashboardProps {
   patient: Patient;
@@ -59,10 +62,16 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
   const searchContainerRef = useRef<HTMLDivElement>(null);
   
   // Data States
-  const [radios, setRadios] = useState<Radio[]>([]);
+  const [radios, setRadios] = useState<DocumentWithUrl[]>([]);
   const [treatments, setTreatments] = useState<Treatment[]>([]);
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [showRadioGallery, setShowRadioGallery] = useState(false);
+
+  const refreshRadios = () => {
+      listDocuments(patient.id, { category: 'radiology' })
+          .then(setRadios)
+          .catch(err => console.error('Failed to load radiology docs', err));
+  };
   
   // Treatment Form State
   const [showTreatmentModal, setShowTreatmentModal] = useState(false);
@@ -108,11 +117,12 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
   }, []);
 
   useEffect(() => {
-    api.radios.list(patient.id).then(setRadios);
+    refreshRadios();
     api.treatments.list(patient.id).then(setTreatments);
     api.prescriptions.list(patient.id).then(setPrescriptions);
     // Initialize notes from patient prop
     setNotes(patient.medicalHistory?.notes || '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patient.id]);
 
   // --- Filter Logic ---
@@ -338,7 +348,8 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
     { id: 'appointments', label: t('schedule'), icon: Calendar },
     { id: 'prescriptions', label: t('prescriptions'), icon: Pill },
     { id: 'financials', label: t('billing'), icon: Receipt },
-    { id: 'radiology', label: t('documents'), icon: ImageIcon },
+    { id: 'radiology', label: t('radiologyGallery'), icon: ImageIcon },
+    { id: 'documents', label: t('documents'), icon: FolderOpen },
   ];
 
   const currentUser = storage.getUser();
@@ -1007,10 +1018,18 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             {radios.map(r => (
                                 <div key={r.id} className="aspect-square bg-black rounded-xl overflow-hidden relative group cursor-pointer" onClick={() => setShowRadioGallery(true)}>
-                                    <img src={r.url} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"/>
+                                    {r.signed_url ? (
+                                        <img src={r.signed_url} alt={r.file_name} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"/>
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-surface-500">
+                                            <ImageIcon size={28} />
+                                        </div>
+                                    )}
                                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 p-2">
-                                        <p className="text-white text-xs truncate">{r.fileName}</p>
-                                        <p className="text-surface-400 text-[10px]">{formatDate(new Date(r.date), language)}</p>
+                                        <p className="text-white text-xs truncate">{r.file_name}</p>
+                                        <p className="text-surface-400 text-[10px]">
+                                            {r.category} • {formatDate(new Date(r.uploaded_at), language)}
+                                        </p>
                                     </div>
                                 </div>
                             ))}
@@ -1024,6 +1043,11 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                 </div>
             )}
 
+            {/* DOCUMENTS TAB (consents, insurance, certificates, etc.) */}
+            {activeTab === 'documents' && (
+                <DocumentsTab patientId={patient.id} />
+            )}
+
         </div>
       </div>
 
@@ -1031,11 +1055,9 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
       {showRadioGallery && (
         <RadiologyGalleryModal
             isOpen={showRadioGallery}
-            onClose={() => setShowRadioGallery(false)}
+            onClose={() => { setShowRadioGallery(false); refreshRadios(); }}
             patientId={patient.id}
-            radios={radios}
-            onUploadSuccess={(r) => setRadios(prev => [r, ...prev])}
-            onDelete={(id) => setRadios(prev => prev.filter(r => r.id !== id))}
+            onChange={refreshRadios}
         />
       )}
 
