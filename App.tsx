@@ -16,10 +16,35 @@ import { Topbar } from './components/layout/Topbar';
 
 import { RegisterPage } from './features/auth/RegisterPage';
 
+// Phase 3 clinical pages
+import { ClinicalNoteEditor } from './features/clinical/ClinicalNoteEditor';
+import { DentalChart } from './features/clinical/DentalChart';
+import { TreatmentPlanPage } from './features/treatments/TreatmentPlanPage';
+import { InsuranceTab } from './features/insurance/InsuranceTab';
+import { PrescriptionEditor } from './features/prescriptions/PrescriptionEditor';
+import { RequirePermission } from './components/auth/PermissionGate';
+
+/**
+ * Patient-scoped routes (clinical, dental-chart, insurance) need a patientId.
+ * In this tab-based shell we read the desired patient from window.__dentflowPatientId
+ * which other pages set when navigating. This keeps the routing model from
+ * spec ("/app/patients/:patientId/...") usable without react-router.
+ */
+const usePatientRoute = (): string | null => {
+  const [pid, setPid] = useState<string | null>(() => (window as any).__dentflowPatientId || null);
+  React.useEffect(() => {
+    const handler = () => setPid((window as any).__dentflowPatientId || null);
+    window.addEventListener('dentflow:patient-changed', handler);
+    return () => window.removeEventListener('dentflow:patient-changed', handler);
+  }, []);
+  return pid;
+};
+
 // Main Application Content (Protected)
 const Dashboard: React.FC = () => {
   const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState('calendar');
+  const patientId = usePatientRoute();
 
   const renderContent = () => {
     switch (activeTab) {
@@ -35,6 +60,50 @@ const Dashboard: React.FC = () => {
         return <InventoryPage />;
       case 'team':
         return <TeamPage />;
+
+      // Phase 3 routes
+      // /app/patients/:patientId/clinical
+      case 'clinical':
+        return (
+          <RequirePermission permission="clinical.read">
+            {patientId
+              ? <ClinicalNoteEditor patientId={patientId} onBack={() => setActiveTab('patients')} />
+              : <NoPatientSelected onPick={() => setActiveTab('patients')} />}
+          </RequirePermission>
+        );
+      // /app/patients/:patientId/dental-chart
+      case 'dental-chart':
+        return (
+          <RequirePermission permission="dentalChart.read">
+            {patientId
+              ? <DentalChart patientId={patientId} onBack={() => setActiveTab('patients')} />
+              : <NoPatientSelected onPick={() => setActiveTab('patients')} />}
+          </RequirePermission>
+        );
+      // /app/patients/:patientId/insurance
+      case 'insurance':
+        return (
+          <RequirePermission permission="insurance.read">
+            {patientId
+              ? <InsuranceTab patientId={patientId} onBack={() => setActiveTab('patients')} />
+              : <NoPatientSelected onPick={() => setActiveTab('patients')} />}
+          </RequirePermission>
+        );
+      // /app/treatments
+      case 'treatments':
+        return (
+          <RequirePermission permission="treatments.read">
+            <TreatmentPlanPage />
+          </RequirePermission>
+        );
+      // /app/prescriptions
+      case 'prescriptions':
+        return (
+          <RequirePermission permission="prescriptions.read">
+            <PrescriptionEditor patientId={patientId ?? undefined} />
+          </RequirePermission>
+        );
+
       case 'settings':
         return (
           <>
@@ -63,6 +132,21 @@ const Dashboard: React.FC = () => {
     </Layout>
   );
 };
+
+const NoPatientSelected: React.FC<{ onPick: () => void }> = ({ onPick }) => (
+  <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+    <div className="w-20 h-20 rounded-full bg-surface-100 dark:bg-surface-800 flex items-center justify-center mb-4">
+      <span className="text-3xl">🧑‍⚕️</span>
+    </div>
+    <h3 className="text-lg font-bold text-surface-900 dark:text-white">Select a patient first</h3>
+    <p className="text-sm text-surface-500 dark:text-surface-400 mt-1 max-w-sm">
+      This screen is patient-scoped. Pick a patient from the directory to continue.
+    </p>
+    <button onClick={onPick} className="mt-4 px-4 h-10 rounded-xl bg-primary-600 text-white font-medium">
+      Open patients
+    </button>
+  </div>
+);
 
 // Root App Component with Providers
 function App() {

@@ -184,3 +184,149 @@ export interface DaySummary {
   canceled: number;
   appointments: Appointment[];
 }
+
+// --- PHASE 3: CLINICAL TYPES (additions documented in ARCHITECTURE.md §5) ---
+
+export interface Vitals {
+  bloodPressure?: string; // e.g. "120/80"
+  heartRate?: number;
+  temperature?: number; // celsius
+  weight?: number; // kg
+  height?: number; // cm
+}
+
+export interface ClinicalNote {
+  id: string;
+  patientId: string;
+  appointmentId?: string;
+  authorId: string;
+  authorName?: string;
+  reason?: string;
+  symptoms?: string;
+  diagnosis?: string;
+  notes?: string;
+  treatmentPlan?: string;
+  followUp?: string;
+  vitals?: Vitals;
+  signedAt?: string | null; // ISO date once locked
+  signedBy?: string | null;
+  clinicId: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export type ToothCondition =
+  | 'healthy'
+  | 'caries'
+  | 'filling'
+  | 'crown'
+  | 'extraction'
+  | 'implant'
+  | 'rootCanal'
+  | 'missing'
+  | 'fracture'
+  | 'other';
+
+export interface DentalChartEntry {
+  id: string;
+  patientId: string;
+  toothId: string; // FDI notation, e.g. "11"
+  surface?: string; // M/D/O/B/L
+  condition: ToothCondition;
+  note?: string;
+  color?: string;
+  clinicId: string;
+  createdAt: string;
+  authorId?: string;
+}
+
+export type TreatmentPlanStatus =
+  | 'draft'
+  | 'proposed'
+  | 'accepted'
+  | 'rejected'
+  | 'completed';
+
+export interface TreatmentPlanItem {
+  id: string;
+  planId: string;
+  toothId?: string;
+  description: string;
+  price: number;
+  quantity: number;
+  estimatedDuration?: number; // minutes
+  status?: 'planned' | 'completed';
+}
+
+export interface TreatmentPlan {
+  id: string;
+  patientId: string;
+  patientName?: string;
+  title: string;
+  notes?: string;
+  status: TreatmentPlanStatus;
+  total: number;
+  acceptedAt?: string | null;
+  clinicId: string;
+  createdAt: string;
+  items?: TreatmentPlanItem[];
+}
+
+export interface TreatmentMaterial {
+  id?: string;
+  treatmentId: string;
+  itemId: string;
+  itemName?: string;
+  quantity: number;
+  clinicId: string;
+}
+
+// --- INSURANCE ---
+
+export interface InsuranceProvider {
+  id: string;
+  name: string;
+  code?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  defaultCoveragePct?: number;
+  clinicId?: string | null; // null = global preset
+  createdAt?: string;
+}
+
+export interface InsurancePolicy {
+  id: string;
+  patientId: string;
+  providerId: string;
+  providerName?: string;
+  policyNumber: string;
+  groupNumber?: string;
+  validFrom?: string;
+  validTo?: string;
+  coveragePct?: number;
+  notes?: string;
+  clinicId: string;
+  createdAt: string;
+}
+
+export type InsuranceClaimStatus =
+  | 'draft'
+  | 'submitted'
+  | 'approved'
+  | 'rejected'
+  | 'reimbursed';
+
+export interface InsuranceClaim {
+  id: string;
+  policyId: string;
+  patientId: string;
+  invoiceId?: string;
+  amount: number;
+  reimbursedAmount?: number;
+  status: InsuranceClaimStatus;
+  submittedAt?: string;
+  reimbursedAt?: string;
+  notes?: string;
+  clinicId: string;
+  createdAt: string;
+}

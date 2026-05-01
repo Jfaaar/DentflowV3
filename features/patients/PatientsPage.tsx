@@ -49,6 +49,14 @@ export const PatientsPage: React.FC = () => {
     refreshData();
   }, []);
 
+  // Phase 3: expose the currently-open patient id on window so the App-level
+  // tab router can render patient-scoped routes (clinical, dental-chart,
+  // insurance) without having to thread the id through every child page.
+  useEffect(() => {
+    (window as any).__dentflowPatientId = viewingPatient?.id ?? null;
+    window.dispatchEvent(new CustomEvent('dentflow:patient-changed'));
+  }, [viewingPatient]);
+
   const filteredPatients = useMemo(() => {
     let filtered = patients;
 

@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "concurrently \"npm run server\" \"vite\"",
     "build": "vite build",
+    "typecheck": "vite build",
     "preview": "vite preview",
     "server": "node server/index.js"
   },
