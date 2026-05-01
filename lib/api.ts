@@ -12,7 +12,6 @@ import {
   Patient,
   User,
   Invoice,
-  Radio,
   Treatment,
   Quote,
   InventoryItem,
@@ -32,7 +31,6 @@ import {
   prescriptionsService,
   inventoryService,
   suppliersService,
-  radiosService,
 } from './services';
 
 // Get Supabase access token for authenticated API calls
@@ -363,18 +361,6 @@ export const api = {
     },
     create: async (quote: Omit<Quote, 'id'>): Promise<Quote> => {
       return quotesService.create(quote);
-    },
-  },
-  radios: {
-    list: async (patientId: string): Promise<Radio[]> => {
-      return radiosService.list(patientId);
-    },
-    upload: async (patientId: string, file: File): Promise<Radio> => {
-      return radiosService.upload(patientId, file);
-    },
-    delete: async (id: string): Promise<boolean> => {
-      await radiosService.delete(id);
-      return true;
     },
   },
   inventory: {

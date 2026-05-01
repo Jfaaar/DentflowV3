@@ -1,9 +1,8 @@
 /**
  * Services Layer - Abstraction for backend operations
  *
- * This allows swapping implementations without changing component code:
- * - authService: Supabase Auth (can swap to Firebase, Auth0, etc.)
- * - adminService: Express API (can swap to Edge Functions, direct Supabase, etc.)
+ * - authService: Supabase Auth
+ * - adminService: Express API
  * - domain services: Supabase (clinical/financial entities)
  */
 
@@ -22,8 +21,11 @@ export { prescriptionsService } from './prescriptions';
 export { inventoryService } from './inventory';
 export { inventoryTransactionsService } from './inventoryTransactions';
 export { suppliersService } from './suppliers';
-export { documentsService, radiosService } from './documents';
 export { clinicalNotesService } from './clinicalNotes';
 export { dentalChartService } from './dentalChart';
 export { insuranceService } from './insurance';
 export { settingsService, type ClinicSettings } from './settings';
+
+// Phase 3 storage + notifications (functional namespace style)
+export * as documentsService from './documents';
+export * as notificationsService from './notifications';

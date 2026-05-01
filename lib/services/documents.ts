@@ -1,250 +1,228 @@
-/**
- * Documents service — Supabase-backed.
- *
- * Files live in the private `medical` storage bucket under
- * `{clinic_id}/{patient_id}/{document_id}.{ext}`. The DB row in `documents`
- * is the authoritative metadata record.
- *
- * Legacy `Radio` shape is preserved by `radiosService` below for the existing
- * radiology gallery UI; it just constrains category to `'radiology'` and
- * resolves a fresh signed URL on read.
- */
-
 import { supabase } from '../supabase';
-import { cache } from '../cache';
-import { getServiceContext } from './_context';
-import type { ClinicDocument, Radio } from '../../types';
 
-const TABLE = 'documents';
-const CACHE_PREFIX = 'cache:documents:';
-const BUCKET = 'medical';
+// -----------------------------------------------------------------------------
+// Types
+// -----------------------------------------------------------------------------
 
-interface DBDocument {
+export type DocumentCategory =
+  | 'radiology'
+  | 'consent'
+  | 'insurance'
+  | 'certificate'
+  | 'other';
+
+export interface DocumentRow {
   id: string;
   clinic_id: string;
-  patient_id: string | null;
-  appointment_id: string | null;
-  category: ClinicDocument['category'];
-  file_name: string;
+  patient_id: string;
   storage_path: string;
+  file_name: string;
   mime_type: string | null;
-  size_bytes: number | string | null;
+  size_bytes: number | null;
+  category: DocumentCategory;
   uploaded_by: string | null;
-  created_at: string;
+  uploaded_at: string;
   archived_at: string | null;
 }
 
-const fromDb = (row: DBDocument): ClinicDocument => ({
-  id: row.id,
-  clinicId: row.clinic_id,
-  patientId: row.patient_id ?? undefined,
-  appointmentId: row.appointment_id ?? undefined,
-  category: row.category,
-  fileName: row.file_name,
-  storagePath: row.storage_path,
-  mimeType: row.mime_type ?? undefined,
-  sizeBytes: row.size_bytes == null ? undefined : Number(row.size_bytes),
-  uploadedBy: row.uploaded_by ?? undefined,
-  createdAt: row.created_at,
-});
-
-interface ListOpts {
-  page?: number;
-  pageSize?: number;
-  patientId?: string;
-  filters?: { category?: ClinicDocument['category'] };
+/** Document row joined with a freshly signed URL. */
+export interface DocumentWithUrl extends DocumentRow {
+  signed_url: string | null;
 }
 
-interface ListResult {
-  data: ClinicDocument[];
-  total: number;
+export interface ListOptions {
+  category?: DocumentCategory;
+  /** Include archived rows. Defaults to false. */
+  includeArchived?: boolean;
+  /** Override the default 10-minute signed URL expiry. */
+  signedUrlExpiresIn?: number;
 }
 
-export const documentsService = {
-  async list(opts: ListOpts = {}): Promise<ListResult> {
-    const page = opts.page ?? 0;
-    const size = opts.pageSize ?? 50;
-    const from = page * size;
-    const to = from + size - 1;
+// -----------------------------------------------------------------------------
+// Constants
+// -----------------------------------------------------------------------------
 
-    let q = supabase
-      .from(TABLE)
-      .select('*', { count: 'exact' })
-      .is('archived_at', null)
-      .order('created_at', { ascending: false })
-      .range(from, to);
-    if (opts.patientId) q = q.eq('patient_id', opts.patientId);
-    if (opts.filters?.category) q = q.eq('category', opts.filters.category);
+const BUCKET = 'medical';
+const DEFAULT_EXPIRES_IN = 600; // 10 minutes
 
-    const { data, error, count } = await q;
-    if (error) throw error;
-    return {
-      data: (data ?? []).map((r) => fromDb(r as DBDocument)),
-      total: count ?? 0,
-    };
-  },
+// -----------------------------------------------------------------------------
+// Internals
+// -----------------------------------------------------------------------------
 
-  async get(id: string): Promise<ClinicDocument | null> {
-    const { data, error } = await supabase
-      .from(TABLE)
-      .select('*')
-      .eq('id', id)
-      .maybeSingle();
-    if (error) throw error;
-    return data ? fromDb(data as DBDocument) : null;
-  },
+const getCurrentClinicId = async (): Promise<string> => {
+  const { data: userData, error: userErr } = await supabase.auth.getUser();
+  if (userErr) throw userErr;
+  const userId = userData.user?.id;
+  if (!userId) throw new Error('Not authenticated');
 
-  async create(
-    input: Omit<ClinicDocument, 'id' | 'clinicId' | 'createdAt'>,
-  ): Promise<ClinicDocument> {
-    const { clinicId, userId } = await getServiceContext();
-    const { data, error } = await supabase
-      .from(TABLE)
-      .insert({
-        clinic_id: clinicId,
-        patient_id: input.patientId ?? null,
-        appointment_id: input.appointmentId ?? null,
-        category: input.category,
-        file_name: input.fileName,
-        storage_path: input.storagePath,
-        mime_type: input.mimeType ?? null,
-        size_bytes: input.sizeBytes ?? null,
-        uploaded_by: input.uploadedBy ?? userId,
-      })
-      .select('*')
-      .single();
-    if (error) throw error;
-    cache.invalidate(CACHE_PREFIX);
-    return fromDb(data as DBDocument);
-  },
+  const { data: profile, error: profErr } = await supabase
+    .from('profiles')
+    .select('clinic_id')
+    .eq('id', userId)
+    .single();
 
-  async upload(
-    file: File,
-    opts: {
-      patientId?: string;
-      appointmentId?: string;
-      category: ClinicDocument['category'];
-    },
-  ): Promise<ClinicDocument> {
-    const { clinicId } = await getServiceContext();
-    const docId = crypto.randomUUID();
-    const ext = file.name.includes('.')
-      ? file.name.split('.').pop()!.toLowerCase()
-      : 'bin';
-    const path = `${clinicId}/${opts.patientId ?? 'misc'}/${docId}.${ext}`;
-
-    const { error: uploadErr } = await supabase.storage
-      .from(BUCKET)
-      .upload(path, file, { upsert: false, contentType: file.type });
-    if (uploadErr) throw uploadErr;
-
-    return this.create({
-      patientId: opts.patientId,
-      appointmentId: opts.appointmentId,
-      category: opts.category,
-      fileName: file.name,
-      storagePath: path,
-      mimeType: file.type,
-      sizeBytes: file.size,
-    });
-  },
-
-  async update(
-    id: string,
-    input: Partial<Pick<ClinicDocument, 'category' | 'fileName'>>,
-  ): Promise<ClinicDocument> {
-    const row: Record<string, unknown> = {};
-    if (input.category !== undefined) row.category = input.category;
-    if (input.fileName !== undefined) row.file_name = input.fileName;
-    const { data, error } = await supabase
-      .from(TABLE)
-      .update(row)
-      .eq('id', id)
-      .select('*')
-      .single();
-    if (error) throw error;
-    cache.invalidate(CACHE_PREFIX);
-    return fromDb(data as DBDocument);
-  },
-
-  async archive(id: string): Promise<void> {
-    const doc = await this.get(id);
-    const { error } = await supabase
-      .from(TABLE)
-      .update({ archived_at: new Date().toISOString() })
-      .eq('id', id);
-    if (error) throw error;
-    if (doc?.storagePath) {
-      // Best-effort: remove the underlying object too.
-      await supabase.storage.from(BUCKET).remove([doc.storagePath]);
-    }
-    cache.invalidate(CACHE_PREFIX);
-  },
-
-  async signedUrl(storagePath: string, expiresInSec = 60 * 10): Promise<string> {
-    const { data, error } = await supabase.storage
-      .from(BUCKET)
-      .createSignedUrl(storagePath, expiresInSec);
-    if (error) throw error;
-    return data.signedUrl;
-  },
+  if (profErr) throw profErr;
+  if (!profile?.clinic_id) throw new Error('User is not assigned to a clinic');
+  return profile.clinic_id as string;
 };
 
-// ─── Legacy Radio adapter ─────────────────────────────────────────────────
-// Some screens still consume the `Radio` type. We surface the radiology
-// subset of `documents` through this service so existing components don't
-// need to change.
-
-export const radiosService = {
-  async list(patientId: string): Promise<Radio[]> {
-    const { data, error } = await supabase
-      .from(TABLE)
-      .select('*')
-      .eq('patient_id', patientId)
-      .eq('category', 'radiology')
-      .is('archived_at', null)
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-
-    const rows = (data ?? []) as DBDocument[];
-    const withUrls = await Promise.all(
-      rows.map(async (r) => {
-        try {
-          const url = await documentsService.signedUrl(r.storage_path);
-          const radio: Radio = {
-            id: r.id,
-            patientId: r.patient_id ?? '',
-            url,
-            fileName: r.file_name,
-            date: r.created_at,
-          };
-          return radio;
-        } catch {
-          return null;
-        }
-      }),
-    );
-    return withUrls.filter((r): r is Radio => r !== null);
-  },
-
-  async upload(patientId: string, file: File): Promise<Radio> {
-    const doc = await documentsService.upload(file, {
-      patientId,
-      category: 'radiology',
-    });
-    const url = await documentsService.signedUrl(doc.storagePath);
-    return {
-      id: doc.id,
-      patientId,
-      url,
-      fileName: doc.fileName,
-      date: doc.createdAt,
-    };
-  },
-
-  async delete(id: string): Promise<void> {
-    return documentsService.archive(id);
-  },
+const getCurrentUserId = async (): Promise<string | null> => {
+  const { data } = await supabase.auth.getUser();
+  return data.user?.id ?? null;
 };
 
-export type { ListOpts as DocumentsListOpts, ListResult as DocumentsListResult };
+const extOf = (file: File): string => {
+  const dot = file.name.lastIndexOf('.');
+  if (dot < 0 || dot === file.name.length - 1) return 'bin';
+  return file.name.slice(dot + 1).toLowerCase();
+};
+
+const signUrl = async (
+  path: string,
+  expiresIn: number = DEFAULT_EXPIRES_IN,
+): Promise<string | null> => {
+  const { data, error } = await supabase
+    .storage
+    .from(BUCKET)
+    .createSignedUrl(path, expiresIn);
+  if (error) {
+    // Don't throw on URL-signing failures during list — surface as null and
+    // let the caller decide how to render (e.g. a placeholder).
+    console.error('Failed to sign URL for', path, error.message);
+    return null;
+  }
+  return data?.signedUrl ?? null;
+};
+
+// -----------------------------------------------------------------------------
+// Public API
+// -----------------------------------------------------------------------------
+
+/**
+ * Uploads `file` to the `medical` bucket at
+ * `${clinicId}/${patientId}/${docId}.${ext}`, then inserts the matching
+ * `documents` row. Returns the inserted row joined with a fresh signed URL.
+ */
+export const upload = async (
+  file: File,
+  patientId: string,
+  category: DocumentCategory,
+): Promise<DocumentWithUrl> => {
+  const clinicId = await getCurrentClinicId();
+  const userId = await getCurrentUserId();
+
+  // Generate a UUID-ish doc id on the client. crypto.randomUUID is supported
+  // by every browser DentFlow targets.
+  const docId =
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  const ext = extOf(file);
+  const storagePath = `${clinicId}/${patientId}/${docId}.${ext}`;
+
+  const { error: uploadErr } = await supabase
+    .storage
+    .from(BUCKET)
+    .upload(storagePath, file, {
+      contentType: file.type || undefined,
+      upsert: false,
+    });
+
+  if (uploadErr) throw uploadErr;
+
+  const insertPayload = {
+    id: docId,
+    clinic_id: clinicId,
+    patient_id: patientId,
+    storage_path: storagePath,
+    file_name: file.name,
+    mime_type: file.type || null,
+    size_bytes: file.size,
+    category,
+    uploaded_by: userId,
+  };
+
+  const { data: row, error: insertErr } = await supabase
+    .from('documents')
+    .insert(insertPayload)
+    .select()
+    .single();
+
+  if (insertErr) {
+    // Best-effort cleanup: remove the orphaned storage object.
+    await supabase.storage.from(BUCKET).remove([storagePath]).catch(() => {});
+    throw insertErr;
+  }
+
+  const signed_url = await signUrl(storagePath);
+  return { ...(row as DocumentRow), signed_url };
+};
+
+/**
+ * Lists active documents for `patientId`, joined with a freshly created
+ * signed URL (default 10-minute lifetime). Filter by `category` via opts.
+ */
+export const list = async (
+  patientId: string,
+  opts: ListOptions = {},
+): Promise<DocumentWithUrl[]> => {
+  let query = supabase
+    .from('documents')
+    .select('*')
+    .eq('patient_id', patientId)
+    .order('uploaded_at', { ascending: false });
+
+  if (opts.category) query = query.eq('category', opts.category);
+  if (!opts.includeArchived) query = query.is('archived_at', null);
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  const rows = (data ?? []) as DocumentRow[];
+  const expiresIn = opts.signedUrlExpiresIn ?? DEFAULT_EXPIRES_IN;
+
+  // Sign in parallel.
+  const signed = await Promise.all(
+    rows.map(async (r) => ({
+      ...r,
+      signed_url: await signUrl(r.storage_path, expiresIn),
+    })),
+  );
+
+  return signed;
+};
+
+/**
+ * Returns a fresh signed URL for an existing document.
+ */
+export const signedUrl = async (
+  documentId: string,
+  expiresIn: number = DEFAULT_EXPIRES_IN,
+): Promise<string> => {
+  const { data, error } = await supabase
+    .from('documents')
+    .select('storage_path')
+    .eq('id', documentId)
+    .single();
+  if (error) throw error;
+  if (!data?.storage_path) throw new Error('Document has no storage path');
+
+  const url = await signUrl(data.storage_path as string, expiresIn);
+  if (!url) throw new Error('Failed to create signed URL');
+  return url;
+};
+
+/**
+ * Soft-deletes a document by stamping `archived_at`. The underlying
+ * storage object is left in place so we can restore later if needed.
+ */
+export const archive = async (id: string): Promise<void> => {
+  const { error } = await supabase
+    .from('documents')
+    .update({ archived_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw error;
+};
+
+export const documentsService = { upload, list, signedUrl, archive };
