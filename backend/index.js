@@ -29,6 +29,10 @@ const paymentsRouter = require('./routes/payments');
 const treatmentsRouter = require('./routes/treatments');
 const treatmentPlansRouter = require('./routes/treatmentPlans');
 const quotesRouter = require('./routes/quotes');
+const prescriptionsRouter = require('./routes/prescriptions');
+const inventoryRouter = require('./routes/inventory');
+const suppliersRouter = require('./routes/suppliers');
+const inventoryTransactionsRouter = require('./routes/inventoryTransactions');
 
 function buildCorsOptions() {
   const raw = process.env.CORS_ORIGINS || '';
@@ -123,6 +127,10 @@ function createApp() {
   app.use('/api/v1/treatments', treatmentsRouter);
   app.use('/api/v1/treatment-plans', treatmentPlansRouter);
   app.use('/api/v1/quotes', quotesRouter);
+  app.use('/api/v1/prescriptions', prescriptionsRouter);
+  app.use('/api/v1/inventory', inventoryRouter);
+  app.use('/api/v1/suppliers', suppliersRouter);
+  app.use('/api/v1/inventory-transactions', inventoryTransactionsRouter);
 
   // Global structured error handler (unified envelope)
   app.use(errorHandler);
