@@ -14,6 +14,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 
 const { authLimiter, defaultLimiter } = require('./middleware/rateLimit');
+const { errorHandler } = require('./middleware/errorHandler');
 
 const healthRouter = require('./routes/health');
 const authRouter = require('./routes/auth');
@@ -21,6 +22,7 @@ const backofficeRouter = require('./routes/backoffice');
 const staffRouter = require('./routes/staff');
 const documentsRouter = require('./routes/documents');
 const { router: uploadsRouter } = require('./routes/uploads');
+const patientsRouter = require('./routes/patients');
 
 function buildCorsOptions() {
   const raw = process.env.CORS_ORIGINS || '';
@@ -107,16 +109,11 @@ function createApp() {
   // Radiology uploads (multer)
   app.use('/api', uploadsRouter);
 
-  // Global error handler
-  // eslint-disable-next-line no-unused-vars
-  app.use((err, req, res, next) => {
-    // eslint-disable-next-line no-console
-    console.error('Server Error:', err);
-    if (err && err.message === 'Origin not allowed by CORS') {
-      return res.status(403).json({ error: 'Origin not allowed' });
-    }
-    res.status(500).json({ error: 'Internal Server Error' });
-  });
+  // ----- v1 layered routes (controllers/services/repositories) -----
+  app.use('/api/v1/patients', patientsRouter);
+
+  // Global structured error handler (unified envelope)
+  app.use(errorHandler);
 
   // Production static serving (kept for parity with the previous monolith)
   if (process.env.NODE_ENV === 'production') {

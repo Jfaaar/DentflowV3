@@ -1,17 +1,21 @@
 // Supabase token validation middleware.
-// Mirrors the original `authenticateToken` from server/index.js but is now reusable.
+// Validates the Bearer access token, attaches req.user and req.supabase.
+//
+// req.supabase is a per-request user-scoped Supabase client whose Authorization
+// header is the validated token, so RLS still applies in repositories.
 const { supabaseAuth, supabaseAdmin } = require('../lib/supabase');
+const { makeUserClient } = require('../db/supabase');
 
 async function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    return res.status(401).json({ error: 'No token provided' });
+    return res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'No token provided' } });
   }
 
   if (!supabaseAuth || !supabaseAdmin) {
-    return res.status(500).json({ error: 'Auth not configured' });
+    return res.status(500).json({ error: { code: 'AUTH_UNCONFIGURED', message: 'Auth not configured' } });
   }
 
   try {
@@ -20,7 +24,7 @@ async function authenticateToken(req, res, next) {
     if (error || !user) {
       // eslint-disable-next-line no-console
       console.error('Auth error:', error?.message);
-      return res.status(403).json({ error: 'Invalid token' });
+      return res.status(403).json({ error: { code: 'INVALID_TOKEN', message: 'Invalid token' } });
     }
 
     const { data: profile } = await supabaseAdmin
@@ -37,11 +41,13 @@ async function authenticateToken(req, res, next) {
       clinicId: profile?.clinic_id || null,
     };
 
+    req.supabase = makeUserClient(token);
+
     next();
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('Token validation error:', err);
-    return res.status(500).json({ error: 'Auth server error' });
+    return res.status(500).json({ error: { code: 'AUTH_SERVER_ERROR', message: 'Auth server error' } });
   }
 }
 
