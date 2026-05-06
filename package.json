@@ -1,73 +1,28 @@
 {
-  "name": "dentflow-manager",
+  "name": "dentflow",
   "version": "1.0.0",
+  "private": true,
   "description": "Multi-tenant clinic management SaaS — patients, scheduling, clinical records, prescriptions, inventory, radiology, invoicing.",
-  "main": "server/index.js",
   "engines": {
     "node": ">=18.x"
   },
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "scripts": {
-    "dev": "concurrently \"npm run server\" \"vite\"",
-    "build": "vite build",
-    "typecheck": "vite build",
-    "preview": "vite preview",
-    "server": "node server/index.js",
-    "server:dev": "node --watch server/index.js",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint . --ext .ts,.tsx,.js,.jsx --max-warnings=0",
-    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
+    "dev": "concurrently -n frontend,backend -c blue,green \"npm:dev -w frontend\" \"npm:dev -w backend\"",
+    "build": "npm run build -w frontend",
+    "preview": "npm run preview -w frontend",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "lint:fix": "npm run lint:fix --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
-    "test": "vitest run",
-    "test:watch": "vitest"
-  },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.89.0",
-    "body-parser": "^1.20.2",
-    "clsx": "^2.1.1",
-    "concurrently": "^8.2.2",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
-    "express": "^4.18.2",
-    "express-rate-limit": "^7.4.1",
-    "firebase": "^12.7.0",
-    "helmet": "^8.0.0",
-    "jsonwebtoken": "^9.0.3",
-    "lucide-react": "^0.344.0",
-    "multer": "^1.4.5-lts.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.30.3",
-    "tailwind-merge": "^2.2.1",
-    "zod": "^3.25.76"
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css}\""
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "@typescript-eslint/eslint-plugin": "^7.18.0",
-    "@typescript-eslint/parser": "^7.18.0",
-    "@vitejs/plugin-react": "^4.2.1",
-    "eslint": "^8.57.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-react": "^7.35.0",
-    "eslint-plugin-react-hooks": "^4.6.2",
-    "prettier": "^3.3.3",
-    "supertest": "^7.0.0",
-    "typescript": "^5.9.3",
-    "vite": "^5.1.4",
-    "vitest": "^2.1.4"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+    "concurrently": "^8.2.2",
+    "prettier": "^3.3.3"
   }
 }

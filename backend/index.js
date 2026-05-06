@@ -5,7 +5,9 @@
 // pre-split monolith). Error responses for invalid input are now structured
 // as { error, issues } via the Zod validation middleware.
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '..', '.env.local') });
+// Phase 0 compatibility: env file was moved with the frontend during the workspace split.
+// Phase 3 will introduce a backend-specific .env.local with only the server-side vars.
+require('dotenv').config({ path: path.join(__dirname, '..', 'frontend', '.env.local') });
 
 const express = require('express');
 const cors = require('cors');
