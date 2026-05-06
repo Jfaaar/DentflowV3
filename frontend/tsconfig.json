@@ -18,20 +18,19 @@
     "strict": false,
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./src/*"],
+      "@/app/*": ["./src/app/*"],
+      "@/components/*": ["./src/components/*"],
+      "@/features/*": ["./src/features/*"],
+      "@/shared/*": ["./src/shared/*"],
+      "@/services/*": ["./src/services/*"],
+      "@/assets/*": ["./src/assets/*"]
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "include": [
-    "App.tsx",
-    "index.tsx",
-    "vite-env.d.ts",
-    "types.ts",
-    "components/**/*",
-    "features/**/*",
-    "lib/**/*"
-  ],
-  "exclude": ["node_modules", "dist", "server"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

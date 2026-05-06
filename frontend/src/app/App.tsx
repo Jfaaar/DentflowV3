@@ -9,36 +9,36 @@ import {
   useNavigate,
 } from 'react-router-dom';
 
-import { Sidebar } from './components/layout/Sidebar';
-import { Layout } from './components/layout/Layout';
-import { Topbar } from './components/layout/Topbar';
-import { LoginPage } from './features/auth/LoginPage';
-import { RegisterPage } from './features/auth/RegisterPage';
-import { AuthProvider, useAuth } from './features/auth/useAuth';
-import { LanguageProvider } from './features/language/LanguageContext';
-import { ThemeProvider } from './features/theme/ThemeContext';
-import { CalendarPage } from './features/calendar/CalendarPage';
-import { PatientsPage } from './features/patients/PatientsPage';
-import { DashboardPage } from './features/dashboard/DashboardPage';
-import { InvoicesPage } from './features/invoices/InvoicesPage';
-import { InventoryPage } from './features/inventory/InventoryPage';
-import { TeamPage } from './features/settings/TeamPage';
+import { Sidebar } from '../components/layout/Sidebar';
+import { Layout } from '../components/layout/Layout';
+import { Topbar } from '../components/layout/Topbar';
+import { LoginPage } from '../features/auth/LoginPage';
+import { RegisterPage } from '../features/auth/RegisterPage';
+import { AuthProvider, useAuth } from '../features/auth/useAuth';
+import { LanguageProvider } from '../features/language/LanguageContext';
+import { ThemeProvider } from '../features/theme/ThemeContext';
+import { CalendarPage } from '../features/calendar/CalendarPage';
+import { PatientsPage } from '../features/patients/PatientsPage';
+import { DashboardPage } from '../features/dashboard/DashboardPage';
+import { InvoicesPage } from '../features/invoices/InvoicesPage';
+import { InventoryPage } from '../features/inventory/InventoryPage';
+import { TeamPage } from '../features/settings/TeamPage';
 
 // Phase 3 clinical pages
-import { ClinicalNoteEditor } from './features/clinical/ClinicalNoteEditor';
-import { DentalChart } from './features/clinical/DentalChart';
-import { TreatmentPlanPage } from './features/treatments/TreatmentPlanPage';
-import { InsuranceTab } from './features/insurance/InsuranceTab';
-import { PrescriptionEditor } from './features/prescriptions/PrescriptionEditor';
-import { RequirePermission } from './features/auth/RouteGuards';
+import { ClinicalNoteEditor } from '../features/clinical/ClinicalNoteEditor';
+import { DentalChart } from '../features/clinical/DentalChart';
+import { TreatmentPlanPage } from '../features/treatments/TreatmentPlanPage';
+import { InsuranceTab } from '../features/insurance/InsuranceTab';
+import { PrescriptionEditor } from '../features/prescriptions/PrescriptionEditor';
+import { RequirePermission } from '../features/auth/RouteGuards';
 import { useParams } from 'react-router-dom';
 
-import { BackofficeSidebar } from './features/backoffice/BackofficeSidebar';
-import { ClinicsPage } from './features/backoffice/ClinicsPage';
-import { ClinicDetailsPage } from './features/backoffice/ClinicDetailsPage';
-import { DashboardPage as BackofficeDashboardPage } from './features/backoffice/DashboardPage';
+import { BackofficeSidebar } from '../features/backoffice/BackofficeSidebar';
+import { ClinicsPage } from '../features/backoffice/ClinicsPage';
+import { ClinicDetailsPage } from '../features/backoffice/ClinicDetailsPage';
+import { DashboardPage as BackofficeDashboardPage } from '../features/backoffice/DashboardPage';
 
-import { RequireAuth, RequireRole, RoleLanding } from './features/auth/RouteGuards';
+import { RequireAuth, RequireRole, RoleLanding } from '../features/auth/RouteGuards';
 
 // ─── Clinic shell (doctor / assistant / clinic_admin) ────────────────────────
 
