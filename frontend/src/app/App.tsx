@@ -7,6 +7,7 @@ import {
   Routes,
   useLocation,
   useNavigate,
+  useParams,
 } from 'react-router-dom';
 
 import { Sidebar } from '../components/layout/Sidebar';
@@ -24,33 +25,26 @@ import { InvoicesPage } from '../features/invoices/InvoicesPage';
 import { InventoryPage } from '../features/inventory/InventoryPage';
 import { TeamPage } from '../features/settings/TeamPage';
 
-// Phase 3 clinical pages
 import { ClinicalNoteEditor } from '../features/clinical/ClinicalNoteEditor';
 import { DentalChart } from '../features/clinical/DentalChart';
 import { TreatmentPlanPage } from '../features/treatments/TreatmentPlanPage';
 import { InsuranceTab } from '../features/insurance/InsuranceTab';
 import { PrescriptionEditor } from '../features/prescriptions/PrescriptionEditor';
-import { RequirePermission } from '../features/auth/RouteGuards';
-import { useParams } from 'react-router-dom';
 
 import { BackofficeSidebar } from '../features/backoffice/BackofficeSidebar';
 import { ClinicsPage } from '../features/backoffice/ClinicsPage';
 import { ClinicDetailsPage } from '../features/backoffice/ClinicDetailsPage';
 import { DashboardPage as BackofficeDashboardPage } from '../features/backoffice/DashboardPage';
 
-import { RequireAuth, RequireRole, RoleLanding } from '../features/auth/RouteGuards';
+import { RoleLanding } from '../features/auth/RouteGuards';
+import { ProtectedRoute } from '../shared/components/ProtectedRoute';
+import {
+  ROUTES,
+  APP_TAB_TO_PATH,
+  BACKOFFICE_TAB_TO_PATH,
+} from '../shared/constants/routes';
 
 // ─── Clinic shell (doctor / assistant / clinic_admin) ────────────────────────
-
-const APP_TAB_TO_PATH: Record<string, string> = {
-  dashboard: '/app/dashboard',
-  calendar: '/app/calendar',
-  patients: '/app/patients',
-  invoices: '/app/invoices',
-  inventory: '/app/inventory',
-  team: '/app/team',
-  settings: '/app/settings',
-};
 
 const ClinicShell: React.FC = () => {
   const { logout } = useAuth();
@@ -74,15 +68,13 @@ const ClinicShell: React.FC = () => {
   );
 };
 
-// Patient-scoped wrapper: pulls :patientId from the URL and passes it to a
-// page component. `onBack` returns to the patient list.
 const PatientScopedRoute: React.FC<{
   Component: React.FC<{ patientId: string; patientName?: string; onBack: () => void }>;
 }> = ({ Component }) => {
   const { patientId } = useParams<{ patientId: string }>();
   const navigate = useNavigate();
-  if (!patientId) return <Navigate to="/app/patients" replace />;
-  return <Component patientId={patientId} onBack={() => navigate('/app/patients')} />;
+  if (!patientId) return <Navigate to={ROUTES.app.patients} replace />;
+  return <Component patientId={patientId} onBack={() => navigate(ROUTES.app.patients)} />;
 };
 
 const SettingsPlaceholder: React.FC = () => (
@@ -104,20 +96,16 @@ const SettingsPlaceholder: React.FC = () => (
 
 // ─── Backoffice shell (super_admin) ──────────────────────────────────────────
 
-const BACKOFFICE_TAB_TO_PATH: Record<string, string> = {
-  dashboard: '/backoffice',
-  clinics: '/backoffice/clinics',
-};
-
 const BackofficeShell: React.FC = () => {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const activeTab =
-    location.pathname.startsWith('/backoffice/clinics') ? 'clinics' : 'dashboard';
+  const activeTab = location.pathname.startsWith(ROUTES.backoffice.clinics)
+    ? 'clinics'
+    : 'dashboard';
 
   const handleNavigate = (tab: string) => {
-    const target = BACKOFFICE_TAB_TO_PATH[tab] ?? '/backoffice';
+    const target = BACKOFFICE_TAB_TO_PATH[tab] ?? ROUTES.backoffice.base;
     navigate(target);
   };
 
@@ -140,7 +128,12 @@ const ClinicDetailsRoute: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const clinicId = location.pathname.split('/').pop() || '';
-  return <ClinicDetailsPage clinicId={clinicId} onBack={() => navigate('/backoffice/clinics')} />;
+  return (
+    <ClinicDetailsPage
+      clinicId={clinicId}
+      onBack={() => navigate(ROUTES.backoffice.clinics)}
+    />
+  );
 };
 
 // ─── Auth pages with router-aware navigation ─────────────────────────────────
@@ -148,78 +141,92 @@ const ClinicDetailsRoute: React.FC = () => {
 const LoginRoute: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  if (isAuthenticated) return <Navigate to="/" replace />;
-  return <LoginPage onRegisterClick={() => navigate('/register')} />;
+  if (isAuthenticated) return <Navigate to={ROUTES.root} replace />;
+  return <LoginPage onRegisterClick={() => navigate(ROUTES.auth.register)} />;
 };
 
 const RegisterRoute: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  if (isAuthenticated) return <Navigate to="/" replace />;
-  return <RegisterPage onBackToLogin={() => navigate('/login')} />;
+  if (isAuthenticated) return <Navigate to={ROUTES.root} replace />;
+  return <RegisterPage onBackToLogin={() => navigate(ROUTES.auth.login)} />;
 };
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
 
 const AppRoutes: React.FC = () => (
   <Routes>
-    <Route path="/" element={<RoleLanding />} />
-    <Route path="/login" element={<LoginRoute />} />
-    <Route path="/register" element={<RegisterRoute />} />
+    <Route path={ROUTES.root} element={<RoleLanding />} />
+    <Route path={ROUTES.auth.login} element={<LoginRoute />} />
+    <Route path={ROUTES.auth.register} element={<RegisterRoute />} />
 
-    <Route element={<RequireAuth />}>
-      {/* Clinic users */}
-      <Route
-        element={<RequireRole roles={['clinic_admin', 'doctor', 'assistant']} fallback="/backoffice" />}
-      >
-        <Route path="/app" element={<ClinicShell />}>
-          <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="calendar" element={<CalendarPage />} />
-          <Route path="patients" element={<PatientsPage />} />
-          <Route path="patients/:patientId" element={<PatientsPage />} />
-          <Route element={<RequirePermission permission="clinical.view" />}>
-            <Route
-              path="patients/:patientId/clinical"
-              element={<PatientScopedRoute Component={ClinicalNoteEditor} />}
-            />
-          </Route>
-          <Route element={<RequirePermission permission="dentalChart.view" />}>
-            <Route
-              path="patients/:patientId/dental-chart"
-              element={<PatientScopedRoute Component={DentalChart} />}
-            />
-          </Route>
-          <Route element={<RequirePermission permission="insurance.view" />}>
-            <Route
-              path="patients/:patientId/insurance"
-              element={<PatientScopedRoute Component={InsuranceTab} />}
-            />
-          </Route>
-          <Route path="invoices" element={<InvoicesPage />} />
-          <Route path="inventory" element={<InventoryPage />} />
-          <Route element={<RequirePermission permission="treatments.view" />}>
-            <Route path="treatments" element={<TreatmentPlanPage />} />
-          </Route>
-          <Route element={<RequirePermission permission="prescriptions.view" />}>
-            <Route path="prescriptions" element={<PrescriptionEditor />} />
-          </Route>
-          <Route path="team" element={<TeamPage />} />
-          <Route path="settings" element={<SettingsPlaceholder />} />
-        </Route>
-      </Route>
+    {/* Clinic users */}
+    <Route
+      element={
+        <ProtectedRoute
+          roles={['clinic_admin', 'doctor', 'assistant']}
+          forbiddenRedirect={ROUTES.backoffice.base}
+        />
+      }
+    >
+      <Route path={ROUTES.app.base} element={<ClinicShell />}>
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="calendar" element={<CalendarPage />} />
+        <Route path="patients" element={<PatientsPage />} />
+        <Route path="patients/:patientId" element={<PatientsPage />} />
 
-      {/* Super admin */}
-      <Route element={<RequireRole roles={['super_admin']} fallback="/app/dashboard" />}>
-        <Route path="/backoffice" element={<BackofficeShell />}>
-          <Route index element={<BackofficeDashboardPage />} />
-          <Route path="clinics" element={<ClinicsPage />} />
-          <Route path="clinics/:clinicId" element={<ClinicDetailsRoute />} />
+        <Route element={<ProtectedRoute permission="clinical.view" />}>
+          <Route
+            path="patients/:patientId/clinical"
+            element={<PatientScopedRoute Component={ClinicalNoteEditor} />}
+          />
         </Route>
+        <Route element={<ProtectedRoute permission="dentalChart.view" />}>
+          <Route
+            path="patients/:patientId/dental-chart"
+            element={<PatientScopedRoute Component={DentalChart} />}
+          />
+        </Route>
+        <Route element={<ProtectedRoute permission="insurance.view" />}>
+          <Route
+            path="patients/:patientId/insurance"
+            element={<PatientScopedRoute Component={InsuranceTab} />}
+          />
+        </Route>
+
+        <Route path="invoices" element={<InvoicesPage />} />
+        <Route path="inventory" element={<InventoryPage />} />
+
+        <Route element={<ProtectedRoute permission="treatments.view" />}>
+          <Route path="treatments" element={<TreatmentPlanPage />} />
+        </Route>
+        <Route element={<ProtectedRoute permission="prescriptions.view" />}>
+          <Route path="prescriptions" element={<PrescriptionEditor />} />
+        </Route>
+
+        <Route path="team" element={<TeamPage />} />
+        <Route path="settings" element={<SettingsPlaceholder />} />
       </Route>
     </Route>
 
-    <Route path="*" element={<Navigate to="/" replace />} />
+    {/* Super admin */}
+    <Route
+      element={
+        <ProtectedRoute
+          roles={['super_admin']}
+          forbiddenRedirect={ROUTES.app.dashboard}
+        />
+      }
+    >
+      <Route path={ROUTES.backoffice.base} element={<BackofficeShell />}>
+        <Route index element={<BackofficeDashboardPage />} />
+        <Route path="clinics" element={<ClinicsPage />} />
+        <Route path="clinics/:clinicId" element={<ClinicDetailsRoute />} />
+      </Route>
+    </Route>
+
+    <Route path="*" element={<Navigate to={ROUTES.root} replace />} />
   </Routes>
 );
 
