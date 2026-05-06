@@ -1,51 +1,37 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+// Compat shim: same `useLanguage()` API as before, but powered by i18next.
+//
+// Existing callsites do `const { t, language, setLanguage, dir } = useLanguage()`
+// — that signature is preserved here. Under the hood we delegate to
+// react-i18next's `useTranslation` and i18next's `changeLanguage`.
+
+import React, { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { translations, LanguageCode, languages } from '../../lib/i18n/translations';
-import { storage } from '../../lib/storage';
 
-interface LanguageContextType {
-  language: LanguageCode;
-  setLanguage: (lang: LanguageCode) => void;
-  t: (key: keyof typeof translations['en']) => string;
-  dir: 'ltr' | 'rtl';
-}
+// Ensure i18next is initialized before any consumer reads from it.
+import '../../shared/i18n';
 
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+export type { LanguageCode };
 
-export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [language, setLanguageState] = useState<LanguageCode>(storage.getLanguage() as LanguageCode);
-
-  useEffect(() => {
-    // Handle RTL for Arabic
-    const langConfig = languages.find(l => l.code === language);
-    const dir = langConfig?.dir || 'ltr';
-    document.documentElement.dir = dir;
-    document.documentElement.lang = language;
-    
-    // Update LocalStorage
-    storage.setLanguage(language);
-  }, [language]);
-
-  const setLanguage = (lang: LanguageCode) => {
-    setLanguageState(lang);
-  };
-
-  const t = (key: keyof typeof translations['en']): string => {
-    return translations[language][key] || translations['en'][key] || key;
-  };
-
-  const dir = languages.find(l => l.code === language)?.dir as 'ltr' | 'rtl' || 'ltr';
-
-  return (
-    <LanguageContext.Provider value={{ language, setLanguage, t, dir }}>
-      {children}
-    </LanguageContext.Provider>
-  );
-};
+// LanguageProvider used to wrap the app; keep it as a no-op so existing
+// providers/AppProviders trees don't break.
+export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <>{children}</>
+);
 
 export const useLanguage = () => {
-  const context = useContext(LanguageContext);
-  if (context === undefined) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
-  }
-  return context;
+  const { t: tRaw, i18n } = useTranslation('common');
+  const language = (i18n.language as LanguageCode) || 'en';
+  const dir =
+    (languages.find((l) => l.code === language)?.dir as 'ltr' | 'rtl') || 'ltr';
+
+  const setLanguage = (lang: LanguageCode) => {
+    void i18n.changeLanguage(lang);
+  };
+
+  // Preserve the legacy strict typing: `t(key)` accepts a known key from
+  // translations.en.
+  const t = (key: keyof typeof translations['en']): string => tRaw(key as string);
+
+  return { language, setLanguage, t, dir };
 };
