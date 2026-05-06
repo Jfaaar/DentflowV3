@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../../lib/supabase';
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
+import { useAppDispatch } from '@/store/hooks';
+import { setUser as setReduxUser, logout as reduxLogout, AuthUser } from './store/authSlice';
+import { setStoredToken, clearStoredToken } from '@/shared/storage/authStorage';
 
 // User type matching the app's expectations
 interface User {
@@ -67,12 +70,36 @@ const fetchUserProfile = async (userId: string): Promise<User | null> => {
 };
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const dispatch = useAppDispatch();
   const [state, setState] = useState<AuthState>({
     user: null,
     isAuthenticated: false,
     isLoading: true, // Start loading to check session
     error: null,
   });
+
+  // Mirror local context state into Redux + localStorage for the new RTK Query
+  // baseApi to read. Fully retired in Phase 4 when consumers move off context.
+  useEffect(() => {
+    if (state.user) {
+      dispatch(setReduxUser(state.user as AuthUser));
+    } else if (!state.isLoading) {
+      dispatch(reduxLogout());
+    }
+  }, [state.user, state.isLoading, dispatch]);
+
+  // Mirror Supabase access token into localStorage so baseApi.prepareHeaders
+  // can attach it synchronously to outgoing requests.
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.access_token) {
+        setStoredToken(session.access_token);
+      } else {
+        clearStoredToken();
+      }
+    });
+    return () => { subscription.unsubscribe(); };
+  }, []);
 
   // Check session on mount and listen for auth changes
   useEffect(() => {
