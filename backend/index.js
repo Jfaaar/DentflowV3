@@ -23,6 +23,7 @@ const staffRouter = require('./routes/staff');
 const documentsRouter = require('./routes/documents');
 const { router: uploadsRouter } = require('./routes/uploads');
 const patientsRouter = require('./routes/patients');
+const appointmentsRouter = require('./routes/appointments');
 
 function buildCorsOptions() {
   const raw = process.env.CORS_ORIGINS || '';
@@ -111,6 +112,7 @@ function createApp() {
 
   // ----- v1 layered routes (controllers/services/repositories) -----
   app.use('/api/v1/patients', patientsRouter);
+  app.use('/api/v1/appointments', appointmentsRouter);
 
   // Global structured error handler (unified envelope)
   app.use(errorHandler);
