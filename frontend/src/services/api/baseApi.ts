@@ -2,9 +2,13 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { getStoredToken } from '@/shared/storage/authStorage';
 
 function getBaseUrl(): string {
-  const base = (import.meta.env as Record<string, string | undefined>).VITE_API_BASE_URL;
-  if (base?.trim()) return base.trim().replace(/\/$/, '');
-  return '/api/v1';
+  const raw = (import.meta.env as Record<string, string | undefined>).VITE_API_BASE_URL;
+  const trimmed = raw?.trim().replace(/\/$/, '') || '';
+  if (!trimmed) return '/api/v1';
+  // Be tolerant: if the env var omitted the version segment (a common
+  // mistake during the workspace-split env transition), append /api/v1.
+  if (/\/api\/v\d+$/.test(trimmed)) return trimmed;
+  return `${trimmed}/api/v1`;
 }
 
 export const baseApi = createApi({
