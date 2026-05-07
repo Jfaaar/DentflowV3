@@ -4,6 +4,7 @@ import { Patient, Prescription } from '../../../types';
 import { formatDate } from '../../../lib/utils';
 import { useLanguage } from '../../language/LanguageContext';
 import { Activity } from 'lucide-react';
+import { BRAND } from '../../../lib/brand';
 
 interface PrescriptionPrintViewProps {
   prescription: Prescription;
@@ -55,9 +56,9 @@ export const PrescriptionPrintView: React.FC<PrescriptionPrintViewProps> = ({
                 <div>
                     <div className="flex items-center gap-3 text-primary-900 mb-2">
                         <Activity size={32} />
-                        <h1 className="text-3xl font-bold uppercase tracking-widest">DentFlow</h1>
+                        <h1 className="text-3xl font-bold uppercase tracking-widest">{BRAND.NAME}</h1>
                     </div>
-                    <p className="text-sm font-semibold text-surface-600">Dental Clinic & Implantology Center</p>
+                    <p className="text-sm font-semibold text-surface-600">{BRAND.NAME} Medical Clinic</p>
                     <p className="text-xs text-surface-500 mt-1">123 Medical Plaza, Health District</p>
                     <p className="text-xs text-surface-500">Phone: +212 5 22 00 00 00</p>
                 </div>

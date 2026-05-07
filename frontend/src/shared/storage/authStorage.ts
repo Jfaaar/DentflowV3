@@ -1,4 +1,4 @@
-const TOKEN_KEY = 'dentflow_access_token';
+const TOKEN_KEY = 'medineeo_access_token';
 
 export function getStoredToken(): string | null {
   try {

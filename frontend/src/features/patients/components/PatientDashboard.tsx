@@ -19,12 +19,20 @@ import { RadiologyGalleryModal } from './RadiologyGalleryModal';
 import { DocumentsTab } from './DocumentsTab';
 import { TreatmentFormModal } from './TreatmentFormModal';
 import { Odontogram } from './Odontogram';
+import { BodyRegionChart } from './BodyRegionChart';
 import { PaymentModal } from '../../invoices/components/PaymentModal';
 import { PrescriptionModal } from '../../prescriptions/PrescriptionModal';
 import { PrescriptionPrintView } from '../../prescriptions/components/PrescriptionPrintView';
 import { api } from '../../../lib/api';
 import { storage } from '../../../lib/storage';
+import { toastError } from '../../../lib/toast';
 import { list as listDocuments, type DocumentWithUrl } from '../../../lib/services/documents';
+import { useClinicSpecialty } from '../../settings/useClinicSpecialty';
+import { VitalsForm } from '../../clinical/VitalsForm';
+import { VitalsTimeline } from '../../clinical/VitalsTimeline';
+import { ProblemListPanel } from '../../clinical/ProblemListPanel';
+import { VaccinationsList } from '../../clinical/VaccinationsList';
+import { Heart, ClipboardList, Syringe } from 'lucide-react';
 
 interface PatientDashboardProps {
   patient: Patient;
@@ -39,7 +47,17 @@ interface PatientDashboardProps {
   invoices: Invoice[];
 }
 
-type TabType = 'overview' | 'acts' | 'appointments' | 'financials' | 'radiology' | 'prescriptions' | 'documents';
+type TabType =
+  | 'overview'
+  | 'acts'
+  | 'appointments'
+  | 'financials'
+  | 'radiology'
+  | 'prescriptions'
+  | 'documents'
+  | 'vitals'
+  | 'problems'
+  | 'vaccinations';
 
 export const PatientDashboard: React.FC<PatientDashboardProps> = ({
   patient,
@@ -54,6 +72,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
   invoices
 }) => {
   const { t, language } = useLanguage();
+  const { isDental, has } = useClinicSpecialty();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   
   // Global Patient Search State
@@ -199,7 +218,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
           });
           setTreatments(prev => [...prev, newTreatment]);
       } catch (e) {
-          alert("Failed to add treatment");
+          toastError(e, 'Failed to add treatment');
       }
   };
 
@@ -208,7 +227,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
           const newPrescription = await api.prescriptions.create(data);
           setPrescriptions(prev => [newPrescription, ...prev]);
       } catch (e) {
-          alert("Failed to create prescription");
+          toastError(e, 'Failed to create prescription');
       }
   };
 
@@ -219,7 +238,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
           if (onPatientUpdate) onPatientUpdate(updated);
           onBack(); // Go back to list to see updated status
       } catch (e) {
-          alert("Failed to update status");
+          toastError(e, 'Failed to update status');
       }
   };
 
@@ -229,7 +248,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
               await api.patients.delete(patient.id);
               onBack();
           } catch (e) {
-              alert("Failed to delete patient");
+              toastError(e, 'Failed to delete patient');
           }
       }
   };
@@ -249,7 +268,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
         const result = await api.patients.update(updatedPatient);
         if (onPatientUpdate) onPatientUpdate(result);
     } catch (e) {
-        console.error("Failed to save notes", e);
+        toastError(e, 'Failed to save notes');
     } finally {
         setIsSavingNotes(false);
     }
@@ -285,7 +304,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
           setShowInvoiceModal(false);
           setNewInvoiceAmount('');
       } catch (e) {
-          alert("Failed to create invoice");
+          toastError(e, 'Failed to create invoice');
       } finally {
           setIsCreatingInvoice(false);
       }
@@ -316,7 +335,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
           await api.invoices.update(updatedInvoice);
           if (onDataUpdate) onDataUpdate();
       } catch (e) {
-          alert("Failed to update invoice");
+          toastError(e, 'Failed to update invoice');
       } finally {
           setIsMarkingPaid(null);
       }
@@ -347,8 +366,17 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
     { id: 'acts', label: t('treatments'), icon: Stethoscope },
     { id: 'appointments', label: t('schedule'), icon: Calendar },
     { id: 'prescriptions', label: t('prescriptions'), icon: Pill },
+    // Medical-MVP tabs surface for any non-dental specialty.
+    ...(has('general_practice') || !isDental
+      ? [
+          { id: 'vitals', label: t('vitals'), icon: Heart },
+          { id: 'problems', label: 'Problems', icon: ClipboardList },
+          { id: 'vaccinations', label: 'Vaccinations', icon: Syringe },
+        ]
+      : []),
     { id: 'financials', label: t('billing'), icon: Receipt },
-    { id: 'radiology', label: t('radiologyGallery'), icon: ImageIcon },
+    // Radiology stays for dental clinics; other specialties access imaging via Documents.
+    ...(isDental ? [{ id: 'radiology', label: t('radiologyGallery'), icon: ImageIcon }] : []),
     { id: 'documents', label: t('documents'), icon: FolderOpen },
   ];
 
@@ -695,19 +723,23 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
             {/* TREATMENTS TAB */}
             {activeTab === 'acts' && (
                 <div className="space-y-6">
-                    {/* Odontogram Section */}
-                    <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 p-6 shadow-sm">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-bold text-lg text-surface-900 dark:text-white">Dental Chart</h3>
-                            <div className="text-xs text-surface-500">
-                                Toggle view mode or click teeth to add treatment
+                    {/* Anatomical chart — dental clinics see the odontogram, others get the body chart. */}
+                    {isDental ? (
+                        <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 p-6 shadow-sm">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="font-bold text-lg text-surface-900 dark:text-white">{t('dentalChartTitle')}</h3>
+                                <div className="text-xs text-surface-500">
+                                    Toggle view mode or click teeth to add treatment
+                                </div>
                             </div>
+                            <Odontogram
+                                treatments={treatments}
+                                onToothClick={handleToothClick}
+                            />
                         </div>
-                        <Odontogram 
-                            treatments={treatments}
-                            onToothClick={handleToothClick}
-                        />
-                    </div>
+                    ) : (
+                        <BodyRegionChart patientId={patient.id} />
+                    )}
 
                     <div className="space-y-4">
                         <div className="flex justify-between items-center">
@@ -1046,6 +1078,24 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
             {/* DOCUMENTS TAB (consents, insurance, certificates, etc.) */}
             {activeTab === 'documents' && (
                 <DocumentsTab patientId={patient.id} />
+            )}
+
+            {/* VITALS TAB (medical specialties) */}
+            {activeTab === 'vitals' && (
+                <div className="space-y-6">
+                    <VitalsForm patientId={patient.id} />
+                    <VitalsTimeline patientId={patient.id} />
+                </div>
+            )}
+
+            {/* PROBLEM LIST TAB (medical specialties) */}
+            {activeTab === 'problems' && (
+                <ProblemListPanel patientId={patient.id} />
+            )}
+
+            {/* VACCINATIONS TAB (medical specialties) */}
+            {activeTab === 'vaccinations' && (
+                <VaccinationsList patientId={patient.id} />
             )}
 
         </div>

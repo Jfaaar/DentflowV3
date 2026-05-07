@@ -12,7 +12,6 @@ import {
 
 import { Sidebar } from '../components/layout/Sidebar';
 import { Layout } from '../components/layout/Layout';
-import { Topbar } from '../components/layout/Topbar';
 import { LoginPage } from '../features/auth/LoginPage';
 import { RegisterPage } from '../features/auth/RegisterPage';
 import { AuthProvider, useAuth } from '../features/auth/useAuth';
@@ -24,8 +23,9 @@ import { DashboardPage } from '../features/dashboard/DashboardPage';
 import { InvoicesPage } from '../features/invoices/InvoicesPage';
 import { InventoryPage } from '../features/inventory/InventoryPage';
 import { TeamPage } from '../features/settings/TeamPage';
+import { SpecialtyPage } from '../features/settings/SpecialtyPage';
 
-import { ClinicalNoteEditor } from '../features/clinical/ClinicalNoteEditor';
+import { ClinicalNotesRoute } from '../features/clinical/ClinicalNotesRoute';
 import { DentalChart } from '../features/clinical/DentalChart';
 import { TreatmentPlanPage } from '../features/treatments/TreatmentPlanPage';
 import { InsuranceTab } from '../features/insurance/InsuranceTab';
@@ -76,23 +76,6 @@ const PatientScopedRoute: React.FC<{
   if (!patientId) return <Navigate to={ROUTES.app.patients} replace />;
   return <Component patientId={patientId} onBack={() => navigate(ROUTES.app.patients)} />;
 };
-
-const SettingsPlaceholder: React.FC = () => (
-  <>
-    <Topbar title="Settings" />
-    <div className="flex flex-col items-center justify-center h-full text-surface-400 dark:text-surface-500">
-      <div className="bg-surface-100 dark:bg-surface-800 p-6 rounded-full mb-4">
-        <span className="text-4xl grayscale opacity-50">🚧</span>
-      </div>
-      <h3 className="text-xl font-medium text-surface-900 dark:text-white">
-        Feature Under Construction
-      </h3>
-      <p className="max-w-xs text-center mt-2 text-surface-500 dark:text-surface-400">
-        The settings module is currently being developed.
-      </p>
-    </div>
-  </>
-);
 
 // ─── Backoffice shell (super_admin) ──────────────────────────────────────────
 
@@ -178,7 +161,7 @@ const AppRoutes: React.FC = () => (
         <Route element={<ProtectedRoute permission="clinical.view" />}>
           <Route
             path="patients/:patientId/clinical"
-            element={<PatientScopedRoute Component={ClinicalNoteEditor} />}
+            element={<PatientScopedRoute Component={ClinicalNotesRoute} />}
           />
         </Route>
         <Route element={<ProtectedRoute permission="dentalChart.view" />}>
@@ -205,7 +188,8 @@ const AppRoutes: React.FC = () => (
         </Route>
 
         <Route path="team" element={<TeamPage />} />
-        <Route path="settings" element={<SettingsPlaceholder />} />
+        <Route path="settings" element={<SpecialtyPage />} />
+        <Route path="settings/specialty" element={<SpecialtyPage />} />
       </Route>
     </Route>
 

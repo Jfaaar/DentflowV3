@@ -1,6 +1,19 @@
 // Clinic Settings service — thin fetch shim over /api/v1/settings.
 import { http } from '../http';
 
+export type SpecialtyCode =
+  | 'general_practice'
+  | 'dental'
+  | 'pediatrics'
+  | 'gynecology'
+  | 'cardiology'
+  | 'dermatology'
+  | 'ent'
+  | 'ophthalmology'
+  | 'orthopedics'
+  | 'psychiatry'
+  | 'other';
+
 export interface ClinicSettings {
   clinicId: string;
   logoUrl?: string;
@@ -14,6 +27,8 @@ export interface ClinicSettings {
   invoiceSeq: number;
   prescriptionTemplate?: string;
   quoteTemplate?: string;
+  primarySpecialty: SpecialtyCode;
+  enabledSpecialties: SpecialtyCode[];
   updatedAt: string;
 }
 

@@ -1,5 +1,11 @@
 const { z } = require('zod');
 
+const SPECIALTY_CODES = [
+  'general_practice', 'dental', 'pediatrics', 'gynecology', 'cardiology',
+  'dermatology', 'ent', 'ophthalmology', 'orthopedics', 'psychiatry', 'other',
+];
+const specialtyEnum = z.enum(SPECIALTY_CODES);
+
 const clinicSettingsUpdateSchema = z.object({
   logoUrl: z.string().optional().nullable(),
   taxId: z.string().optional().nullable(),
@@ -12,6 +18,8 @@ const clinicSettingsUpdateSchema = z.object({
   invoiceSeq: z.number().int().min(0).optional(),
   prescriptionTemplate: z.string().optional().nullable(),
   quoteTemplate: z.string().optional().nullable(),
+  primarySpecialty: specialtyEnum.optional(),
+  enabledSpecialties: z.array(specialtyEnum).min(1).optional(),
 });
 
-module.exports = { clinicSettingsUpdateSchema };
+module.exports = { clinicSettingsUpdateSchema, SPECIALTY_CODES };

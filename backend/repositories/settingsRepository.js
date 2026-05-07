@@ -14,6 +14,8 @@ function fromDb(row) {
     invoiceSeq: row.invoice_seq ?? 0,
     prescriptionTemplate: row.prescription_template ?? undefined,
     quoteTemplate: row.quote_template ?? undefined,
+    primarySpecialty: row.primary_specialty ?? 'general_practice',
+    enabledSpecialties: row.enabled_specialties ?? ['general_practice'],
     updatedAt: row.updated_at,
   };
 }
@@ -30,6 +32,8 @@ const COLS = {
   invoiceSeq: 'invoice_seq',
   prescriptionTemplate: 'prescription_template',
   quoteTemplate: 'quote_template',
+  primarySpecialty: 'primary_specialty',
+  enabledSpecialties: 'enabled_specialties',
 };
 
 async function get(db, clinicId) {

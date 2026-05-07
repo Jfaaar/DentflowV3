@@ -13,6 +13,11 @@ export interface ClinicalNote {
   treatmentPlan?: string;
   followUp?: string;
   vitals?: Record<string, number | string>;
+  // SOAP fields (medical clinics use these instead of the free-form fields above).
+  subjective?: string;
+  objective?: string;
+  assessment?: string;
+  plan?: string;
   signedAt?: string;
   createdAt: string;
   updatedAt: string;

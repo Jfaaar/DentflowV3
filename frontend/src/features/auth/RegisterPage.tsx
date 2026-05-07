@@ -36,7 +36,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onBackToLogin }) => 
                         <UserPlus size={32} />
                     </div>
                     <h1 className="text-2xl font-bold text-surface-900">Create Account</h1>
-                    <p className="text-surface-500 text-sm mt-1">Join the DentFlow team</p>
+                    <p className="text-surface-500 text-sm mt-1">Join the MediNEEO team</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">

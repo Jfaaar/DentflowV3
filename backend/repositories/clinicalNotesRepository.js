@@ -14,6 +14,10 @@ function fromDb(row) {
     treatmentPlan: row.treatment_plan ?? undefined,
     followUp: row.follow_up ?? undefined,
     vitals: row.vitals ?? undefined,
+    subjective: row.subjective ?? undefined,
+    objective: row.objective ?? undefined,
+    assessment: row.assessment ?? undefined,
+    plan: row.plan ?? undefined,
     signedAt: row.signed_at ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -31,6 +35,10 @@ const COLS = {
   treatmentPlan: 'treatment_plan',
   followUp: 'follow_up',
   vitals: 'vitals',
+  subjective: 'subjective',
+  objective: 'objective',
+  assessment: 'assessment',
+  plan: 'plan',
   signedAt: 'signed_at',
 };
 

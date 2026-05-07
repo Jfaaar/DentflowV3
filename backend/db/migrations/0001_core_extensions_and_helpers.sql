@@ -65,7 +65,9 @@ CREATE OR REPLACE FUNCTION current_clinic_id() RETURNS UUID
 LANGUAGE sql STABLE SECURITY DEFINER
 AS $$ SELECT clinic_id FROM profiles WHERE id = auth.uid() $$;
 
-CREATE OR REPLACE FUNCTION current_role() RETURNS TEXT
+-- NOTE: named current_user_role() (not current_role) because Postgres reserves
+-- `current_role` as a built-in returning the session role.
+CREATE OR REPLACE FUNCTION current_user_role() RETURNS TEXT
 LANGUAGE sql STABLE SECURITY DEFINER
 AS $$ SELECT role FROM profiles WHERE id = auth.uid() $$;
 

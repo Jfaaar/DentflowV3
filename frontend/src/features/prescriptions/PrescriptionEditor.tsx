@@ -11,6 +11,7 @@ import { useAuth } from '../auth/useAuth';
 import { PermissionGate } from '../../components/auth/PermissionGate';
 import { hasPermission } from '../../lib/permissions';
 import { api } from '../../lib/api';
+import { BRAND } from '../../lib/brand';
 import type { InventoryItem, Prescription, PrescriptionItem } from '../../types';
 import { Plus, Trash2, Printer, FileSignature, Pill, Search, Loader2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -240,7 +241,7 @@ const PrintablePreview: React.FC<{
       <div className="flex-1 overflow-y-auto bg-surface-100 p-8 print:p-0 print:bg-white">
         <div className="max-w-[210mm] min-h-[297mm] mx-auto bg-white shadow-xl print:shadow-none p-12">
           <header className="border-b-2 border-primary-900 pb-6 mb-8">
-            <h1 className="text-3xl font-bold text-primary-900">DentFlow</h1>
+            <h1 className="text-3xl font-bold text-primary-900">{BRAND.NAME}</h1>
             <div className="text-sm text-surface-600 mt-1">{doctorName}</div>
           </header>
           <section className="mb-8 text-sm text-surface-700">

@@ -4,7 +4,7 @@
  * Phase 2 retired the patients/appointments/invoices/treatments/quotes/
  * inventory/suppliers/prescriptions/radios keys — those entities now live
  * in Supabase (see `lib/services/*`). This file is intentionally kept for:
- *   - the locally-cached `dentflow_user` session shim used during sign-in,
+ *   - the locally-cached `medineeo_user` session shim used during sign-in,
  *   - language preference,
  *   - and other ephemeral UI state (e.g. collapsed-sidebar) that isn't
  *     worth a round-trip.
@@ -13,8 +13,8 @@
 import { User } from '../types';
 
 const KEYS = {
-  USER: 'dentflow_user',
-  LANGUAGE: 'dentflow_language',
+  USER: 'medineeo_user',
+  LANGUAGE: 'medineeo_language',
 };
 
 const safeGet = (key: string): string | null => {

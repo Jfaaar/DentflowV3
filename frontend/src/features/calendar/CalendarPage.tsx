@@ -135,6 +135,8 @@ export const CalendarPage: React.FC = () => {
   };
 
   const handleSavePatient = async (patient: Patient) => {
+    // Errors propagate to PatientFormModal so it can show inline field
+    // errors for backend-validation issues and toast the rest.
     setIsSaving(true);
     try {
         if (patientFormInitData) {
@@ -146,8 +148,6 @@ export const CalendarPage: React.FC = () => {
         setPatientFormInitData(undefined);
         // Reopen directory to show updated list
         setIsPatientDirectoryOpen(true);
-    } catch (e) {
-        setAlertMessage({ title: "Error", message: "Failed to save patient." });
     } finally {
         setIsSaving(false);
     }

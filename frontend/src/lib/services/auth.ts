@@ -12,8 +12,8 @@ export interface AppUser {
   avatar?: string;
 }
 
-const TOKEN_KEY = 'dentflow_access_token';
-const USER_KEY = 'dentflow_user';
+const TOKEN_KEY = 'medineeo_access_token';
+const USER_KEY = 'medineeo_user';
 
 function readUser(): AppUser | null {
   try {

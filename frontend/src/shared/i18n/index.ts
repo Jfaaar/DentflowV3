@@ -25,7 +25,7 @@ if (!i18n.isInitialized) {
       interpolation: { escapeValue: false },
       detection: {
         order: ['localStorage', 'navigator', 'htmlTag'],
-        lookupLocalStorage: 'dentflow_language',
+        lookupLocalStorage: 'medineeo_language',
         caches: ['localStorage'],
       },
     });

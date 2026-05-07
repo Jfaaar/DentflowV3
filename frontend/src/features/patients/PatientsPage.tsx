@@ -3,6 +3,7 @@ import { Topbar } from '../../components/layout/Topbar';
 import { Button } from '../../components/ui/Button';
 import { api } from '../../lib/api';
 import { patientsService } from '../../lib/services';
+import { toastError, toastSuccess } from '../../lib/toast';
 import { Patient, Appointment, Invoice } from '../../types';
 import { Search, UserPlus, Pencil, Trash2, Phone, Mail, Loader2, MessageCircle, CalendarPlus, User, Archive, CheckCircle, Undo2 } from 'lucide-react';
 import { PatientFormModal } from './components/PatientFormModal';
@@ -122,19 +123,21 @@ export const PatientsPage: React.FC = () => {
   );
 
   const handleSavePatient = async (patient: Patient) => {
+    // Errors propagate to PatientFormModal, which routes validation issues
+    // to inline field errors and toasts everything else.
     setIsLoading(true);
     try {
         if (editingPatient) {
             await api.patients.update(patient);
+            toastSuccess('Patient updated');
         } else {
             await api.patients.create(patient);
+            toastSuccess('Patient created');
         }
         await refreshData();
         if (viewingPatient && viewingPatient.id === patient.id) {
             setViewingPatient(patient);
         }
-    } catch (e) {
-        alert("Failed to save patient");
     } finally {
         setIsLoading(false);
     }
@@ -147,8 +150,8 @@ export const PatientsPage: React.FC = () => {
           try {
               await api.patients.update({ ...patient, status: 'archived' });
               await refreshData();
-          } catch (e) {
-              alert("Failed to archive patient");
+          } catch (err) {
+              toastError(err, 'Failed to archive patient');
           } finally {
               setIsLoading(false);
           }
@@ -161,8 +164,8 @@ export const PatientsPage: React.FC = () => {
       try {
           await api.patients.update({ ...patient, status: 'active' });
           await refreshData();
-      } catch (e) {
-          alert("Failed to restore patient");
+      } catch (err) {
+          toastError(err, 'Failed to restore patient');
       } finally {
           setIsLoading(false);
       }
@@ -172,9 +175,15 @@ export const PatientsPage: React.FC = () => {
     e.stopPropagation();
     if (window.confirm('Are you sure you want to delete this patient permanently? This action cannot be undone.')) {
       setIsLoading(true);
-      await api.patients.delete(id);
-      await refreshData();
-      if (viewingPatient?.id === id) setViewingPatient(null);
+      try {
+          await api.patients.delete(id);
+          await refreshData();
+          if (viewingPatient?.id === id) setViewingPatient(null);
+      } catch (err) {
+          toastError(err, 'Failed to delete patient');
+      } finally {
+          setIsLoading(false);
+      }
     }
   };
 

@@ -22,6 +22,7 @@ export const ROUTES = {
     prescriptions: '/app/prescriptions',
     team: '/app/team',
     settings: '/app/settings',
+    settingsSpecialty: '/app/settings/specialty',
   },
   backoffice: {
     base: '/backoffice',
@@ -38,6 +39,8 @@ export const APP_TAB_TO_PATH: Record<string, string> = {
   patients: ROUTES.app.patients,
   invoices: ROUTES.app.invoices,
   inventory: ROUTES.app.inventory,
+  treatments: ROUTES.app.treatments,
+  prescriptions: ROUTES.app.prescriptions,
   team: ROUTES.app.team,
   settings: ROUTES.app.settings,
 };

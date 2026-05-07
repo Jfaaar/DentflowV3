@@ -36,7 +36,7 @@ export const ClinicsPage: React.FC = () => {
 
     const getAccessToken = async () => {
         try {
-            return localStorage.getItem('dentflow_access_token');
+            return localStorage.getItem('medineeo_access_token');
         } catch {
             return null;
         }

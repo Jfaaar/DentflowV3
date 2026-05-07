@@ -36,6 +36,7 @@ services:
       - ./backend/db/migrations/0005_invoice_status_trigger.sql:/docker-entrypoint-initdb.d/50_invoice_trigger.sql:ro
       - ./backend/db/migrations/0006_notification_templates_seed.sql:/docker-entrypoint-initdb.d/60_notification_templates.sql:ro
       - ./backend/db/migrations/0007_clinical_locks_and_triggers.sql:/docker-entrypoint-initdb.d/70_clinical_locks.sql:ro
+      - ./backend/db/migrations/0008_medical_mvp.sql:/docker-entrypoint-initdb.d/80_medical_mvp.sql:ro
       - ./backend/db/init/99_dev_seed.sql:/docker-entrypoint-initdb.d/99_dev_seed.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U dentflow -d dentflow"]
@@ -48,7 +49,8 @@ services:
     container_name: dentflow-pgadmin
     restart: unless-stopped
     environment:
-      PGADMIN_DEFAULT_EMAIL: dev@dentflow.local
+      # pgAdmin v8+ rejects .local TLDs in DEFAULT_EMAIL — use .com here.
+      PGADMIN_DEFAULT_EMAIL: dev@dentflow.com
       PGADMIN_DEFAULT_PASSWORD: dentflow
       # Single-user mode — no login screen; opens directly into the UI.
       PGADMIN_CONFIG_SERVER_MODE: "False"

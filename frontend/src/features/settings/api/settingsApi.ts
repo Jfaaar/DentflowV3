@@ -1,5 +1,20 @@
 import { baseApi } from '@/services/api/baseApi';
 
+export const SPECIALTY_CODES = [
+  'general_practice',
+  'dental',
+  'pediatrics',
+  'gynecology',
+  'cardiology',
+  'dermatology',
+  'ent',
+  'ophthalmology',
+  'orthopedics',
+  'psychiatry',
+  'other',
+] as const;
+export type SpecialtyCode = (typeof SPECIALTY_CODES)[number];
+
 export interface ClinicSettings {
   clinicId: string;
   logoUrl?: string;
@@ -13,6 +28,8 @@ export interface ClinicSettings {
   invoiceSeq: number;
   prescriptionTemplate?: string;
   quoteTemplate?: string;
+  primarySpecialty: SpecialtyCode;
+  enabledSpecialties: SpecialtyCode[];
   updatedAt: string;
 }
 

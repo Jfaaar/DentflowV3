@@ -12,6 +12,10 @@ const clinicalNoteCreateSchema = z.object({
   treatmentPlan: z.string().optional().nullable(),
   followUp: z.string().optional().nullable(),
   vitals: z.record(z.union([z.number(), z.string()])).optional().nullable(),
+  subjective: z.string().optional().nullable(),
+  objective: z.string().optional().nullable(),
+  assessment: z.string().optional().nullable(),
+  plan: z.string().optional().nullable(),
 });
 
 const clinicalNoteUpdateSchema = clinicalNoteCreateSchema.partial();

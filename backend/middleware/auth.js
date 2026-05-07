@@ -17,7 +17,7 @@ const { getPool } = require('../db/pg');
 
 const DEV_USER = {
   id: '00000000-0000-0000-0000-000000000001',
-  email: 'demo@dentflow.local',
+  email: 'demo@medineeo.local',
   role: 'clinic_admin',
   name: 'Demo User',
   clinicId: '00000000-0000-0000-0000-0000000000c1',

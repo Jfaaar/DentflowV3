@@ -40,8 +40,8 @@ export const TreatmentPlanPage: React.FC = () => {
   const refresh = async () => {
     setIsLoading(true);
     try {
-      const list = await treatmentPlansService.list();
-      setPlans(list);
+      const { data } = await treatmentPlansService.list();
+      setPlans(data);
       if (active) {
         const fresh = await treatmentPlansService.get(active.id);
         setActive(fresh);

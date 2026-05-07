@@ -1,4 +1,4 @@
-// DentFlow API - bootstrap entry point.
+// MediNEEO API - bootstrap entry point.
 // Phase 4 hardening: helmet, rate limit, CORS allowlist, modular routers.
 //
 // Public surface is preserved (paths/methods/response shapes match the
@@ -34,6 +34,7 @@ const inventoryRouter = require('./routes/inventory');
 const suppliersRouter = require('./routes/suppliers');
 const inventoryTransactionsRouter = require('./routes/inventoryTransactions');
 const clinicalRouter = require('./routes/clinical');
+const medicalRouter = require('./routes/medical');
 const insuranceRouter = require('./routes/insurance');
 const settingsRouter = require('./routes/settings');
 const statsRouter = require('./routes/stats');
@@ -136,6 +137,7 @@ function createApp() {
   app.use('/api/v1/suppliers', suppliersRouter);
   app.use('/api/v1/inventory-transactions', inventoryTransactionsRouter);
   app.use('/api/v1/clinical', clinicalRouter);
+  app.use('/api/v1/medical', medicalRouter);
   app.use('/api/v1/insurance', insuranceRouter);
   app.use('/api/v1/settings', settingsRouter);
   app.use('/api/v1/stats', statsRouter);

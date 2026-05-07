@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { BRAND } from '../../lib/brand';
 
 interface LayoutProps {
   sidebar: React.ReactElement<any>;
@@ -43,7 +44,7 @@ export const Layout: React.FC<LayoutProps> = ({ sidebar, children }) => {
         {/* Mobile Header Trigger */}
         <div className="md:hidden p-4 bg-white/80 dark:bg-surface-900/80 backdrop-blur-md border-b border-surface-200 dark:border-surface-800 flex items-center justify-between sticky top-0 z-20">
             <div className="font-bold text-lg flex items-center gap-2 text-surface-900 dark:text-white">
-                 <span className="bg-primary-600 text-white p-1 rounded-md text-sm">DF</span> DentFlow
+                 <span className="bg-primary-600 text-white p-1 rounded-md text-sm">M</span> {BRAND.NAME}
             </div>
             <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 text-surface-600 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 rounded-lg">
                 <Menu size={24} />

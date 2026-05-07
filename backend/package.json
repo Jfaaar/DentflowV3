@@ -1,8 +1,8 @@
 {
-  "name": "@dentflow/backend",
+  "name": "@medineeo/backend",
   "version": "1.0.0",
   "private": true,
-  "description": "Dentflow API server — Express + Postgres",
+  "description": "MediNEEO API server — Express + Postgres",
   "main": "index.js",
   "scripts": {
     "dev": "node --watch index.js",

@@ -7,6 +7,7 @@ import { cn } from '../../lib/utils';
 import { useLanguage } from '../../features/language/LanguageContext';
 import { useTheme } from '../../features/theme/ThemeContext';
 import { languages, LanguageCode } from '../../lib/i18n/translations';
+import { BRAND } from '../../lib/brand';
 
 interface SidebarProps {
   activeTab: string;
@@ -78,7 +79,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onNavigate, onLogou
           <Activity size={24} />
         </div>
         <div className={cn("overflow-hidden transition-all duration-300", isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>
-          <h1 className="font-bold text-surface-900 dark:text-white text-lg leading-tight whitespace-nowrap">DentFlow</h1>
+          <h1 className="font-bold text-surface-900 dark:text-white text-lg leading-tight whitespace-nowrap">{BRAND.NAME}</h1>
           <p className="text-xs text-surface-500 dark:text-surface-400 font-medium whitespace-nowrap">{t('clinicManager')}</p>
         </div>
       </div>

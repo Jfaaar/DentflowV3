@@ -53,11 +53,11 @@ interface AuthContextType extends AuthState {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const USER_KEY = 'dentflow_user';
+const USER_KEY = 'medineeo_user';
 
 const DEMO_USER: User = {
   id: '00000000-0000-0000-0000-000000000001',
-  email: 'demo@dentflow.local',
+  email: 'demo@medineeo.local',
   name: 'Demo User',
   role: 'clinic_admin',
   clinicId: '00000000-0000-0000-0000-0000000000c1',

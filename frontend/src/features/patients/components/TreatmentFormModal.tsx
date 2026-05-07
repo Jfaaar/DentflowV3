@@ -7,6 +7,12 @@ import { Treatment, InventoryItem, ConsumedMaterial } from '../../../types';
 import { useLanguage } from '../../../features/language/LanguageContext';
 import { Package, Plus, Trash2, Search } from 'lucide-react';
 import { api } from '../../../lib/api';
+import { useClinicSpecialty } from '../../settings/useClinicSpecialty';
+
+const BODY_REGION_OPTIONS = [
+  'head', 'neck', 'chest', 'abdomen', 'pelvis', 'back',
+  'upper_limb_left', 'upper_limb_right', 'lower_limb_left', 'lower_limb_right',
+];
 
 interface TreatmentFormModalProps {
   isOpen: boolean;
@@ -24,6 +30,7 @@ export const TreatmentFormModal: React.FC<TreatmentFormModalProps> = ({
   initialSurface
 }) => {
   const { t } = useLanguage();
+  const { isDental } = useClinicSpecialty();
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [tooth, setTooth] = useState('');
   const [surface, setSurface] = useState('');
@@ -152,27 +159,45 @@ export const TreatmentFormModal: React.FC<TreatmentFormModalProps> = ({
         </div>
         
         <div className="flex gap-4">
-            <div className="w-1/3">
-                <Input 
-                    label={t('tooth')} 
-                    placeholder="e.g. 11" 
-                    value={tooth} 
-                    onChange={e => setTooth(e.target.value)} 
-                />
-            </div>
+            {isDental ? (
+                <div className="w-1/3">
+                    <Input
+                        label={t('tooth')}
+                        placeholder="e.g. 11"
+                        value={tooth}
+                        onChange={e => setTooth(e.target.value)}
+                    />
+                </div>
+            ) : (
+                <div className="w-1/3 space-y-1.5">
+                    <label className="block text-xs font-semibold text-surface-700 dark:text-surface-300 uppercase tracking-wider">
+                        Body region
+                    </label>
+                    <select
+                        value={tooth}
+                        onChange={(e) => setTooth(e.target.value)}
+                        className="w-full h-10 rounded-xl border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-900 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    >
+                        <option value="">—</option>
+                        {BODY_REGION_OPTIONS.map((r) => (
+                            <option key={r} value={r}>{r.replace(/_/g, ' ')}</option>
+                        ))}
+                    </select>
+                </div>
+            )}
             <div className="flex-1">
-                 <Input 
-                    label={t('price')} 
-                    placeholder="0.00" 
-                    value={price} 
+                 <Input
+                    label={t('price')}
+                    placeholder="0.00"
+                    value={price}
                     onChange={e => setPrice(e.target.value)}
-                    required 
+                    required
                     type="number"
                 />
             </div>
         </div>
 
-        {surface && (
+        {isDental && surface && (
             <div className="text-xs text-primary-600 bg-primary-50 px-3 py-2 rounded-lg font-medium border border-primary-100">
                 Selected Surface: {surface}
             </div>
