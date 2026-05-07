@@ -1,7 +1,4 @@
-const POLICIES = 'insurance_policies';
-const CLAIMS = 'insurance_claims';
-const PROVIDERS = 'insurance_providers';
-
+// Insurance — pg. Providers + policies + claims.
 const numOrUndef = (v) => (v == null ? undefined : typeof v === 'number' ? v : Number(v));
 
 function policyFromDb(row) {
@@ -33,118 +30,142 @@ function claimFromDb(row) {
   };
 }
 
+const POLICY_COLS = {
+  patientId: 'patient_id',
+  providerId: 'provider_id',
+  policyNumber: 'policy_number',
+  coveragePct: 'coverage_pct',
+  validUntil: 'valid_until',
+};
+
+const CLAIM_COLS = {
+  patientId: 'patient_id',
+  invoiceId: 'invoice_id',
+  policyId: 'policy_id',
+  status: 'status',
+  submittedAt: 'submitted_at',
+  amountClaimed: 'amount_claimed',
+  amountReimbursed: 'amount_reimbursed',
+  notes: 'notes',
+};
+
 // Providers
-async function listProviders(supabase) {
-  const { data, error } = await supabase
-    .from(PROVIDERS)
-    .select('*')
-    .order('name', { ascending: true });
-  if (error) throw error;
-  return data ?? [];
+async function listProviders(db) {
+  const r = await db.query(`SELECT * FROM insurance_providers ORDER BY name ASC`);
+  return r.rows;
 }
 
 // Policies
-async function listPolicies(supabase, { page = 0, pageSize = 50, patientId }) {
-  const from = page * pageSize;
-  const to = from + pageSize - 1;
-  let q = supabase
-    .from(POLICIES)
-    .select('*', { count: 'exact' })
-    .order('created_at', { ascending: false })
-    .range(from, to);
-  if (patientId) q = q.eq('patient_id', patientId);
-  const { data, error, count } = await q;
-  if (error) throw error;
-  return { data: (data ?? []).map(policyFromDb), page, pageSize, total: count ?? 0 };
+async function listPolicies(db, { page = 0, pageSize = 50, patientId }) {
+  const where = []; const params = [];
+  if (patientId) { params.push(patientId); where.push(`patient_id = $${params.length}`); }
+  const whereSQL = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  params.push(pageSize); const limitIdx = params.length;
+  params.push(page * pageSize); const offsetIdx = params.length;
+  const dataSQL = `SELECT * FROM insurance_policies ${whereSQL} ORDER BY created_at DESC LIMIT $${limitIdx} OFFSET $${offsetIdx}`;
+  const countParams = params.slice(0, params.length - 2);
+  const countSQL = `SELECT COUNT(*)::int AS count FROM insurance_policies ${whereSQL}`;
+  const [d, c] = await Promise.all([db.query(dataSQL, params), db.query(countSQL, countParams)]);
+  return { data: d.rows.map(policyFromDb), page, pageSize, total: c.rows[0].count };
 }
 
-async function getPolicy(supabase, id) {
-  const { data, error } = await supabase.from(POLICIES).select('*').eq('id', id).maybeSingle();
-  if (error) throw error;
-  return policyFromDb(data);
+async function getPolicy(db, id) {
+  const r = await db.query(`SELECT * FROM insurance_policies WHERE id = $1`, [id]);
+  return policyFromDb(r.rows[0]);
 }
 
-async function createPolicy(supabase, input, clinicId) {
-  const row = {
-    clinic_id: clinicId,
-    patient_id: input.patientId,
-    provider_id: input.providerId ?? null,
-    policy_number: input.policyNumber ?? null,
-    coverage_pct: input.coveragePct ?? null,
-    valid_until: input.validUntil ?? null,
-  };
-  const { data, error } = await supabase.from(POLICIES).insert(row).select('*').single();
-  if (error) throw error;
-  return policyFromDb(data);
+async function createPolicy(db, input, clinicId) {
+  const cols = ['clinic_id'];
+  const vals = [clinicId];
+  for (const [k, col] of Object.entries(POLICY_COLS)) {
+    if (input[k] !== undefined) {
+      cols.push(col);
+      vals.push(input[k] ?? null);
+    }
+  }
+  const placeholders = vals.map((_, i) => `$${i + 1}`).join(', ');
+  const r = await db.query(
+    `INSERT INTO insurance_policies (${cols.join(', ')}) VALUES (${placeholders}) RETURNING *`,
+    vals,
+  );
+  return policyFromDb(r.rows[0]);
 }
 
-async function updatePolicy(supabase, id, patch) {
-  const row = {};
-  if (patch.providerId !== undefined) row.provider_id = patch.providerId ?? null;
-  if (patch.policyNumber !== undefined) row.policy_number = patch.policyNumber ?? null;
-  if (patch.coveragePct !== undefined) row.coverage_pct = patch.coveragePct ?? null;
-  if (patch.validUntil !== undefined) row.valid_until = patch.validUntil ?? null;
-  const { data, error } = await supabase.from(POLICIES).update(row).eq('id', id).select('*').single();
-  if (error) throw error;
-  return policyFromDb(data);
+async function updatePolicy(db, id, patch) {
+  const sets = []; const params = [];
+  for (const [k, col] of Object.entries(POLICY_COLS)) {
+    if (k === 'patientId') continue; // tenant column, never overwrite
+    if (patch[k] !== undefined) {
+      params.push(patch[k] ?? null);
+      sets.push(`${col} = $${params.length}`);
+    }
+  }
+  if (sets.length === 0) return getPolicy(db, id);
+  params.push(id);
+  const r = await db.query(
+    `UPDATE insurance_policies SET ${sets.join(', ')} WHERE id = $${params.length} RETURNING *`,
+    params,
+  );
+  return policyFromDb(r.rows[0]);
 }
 
-async function deletePolicy(supabase, id) {
-  const { error } = await supabase.from(POLICIES).delete().eq('id', id);
-  if (error) throw error;
+async function deletePolicy(db, id) {
+  await db.query(`DELETE FROM insurance_policies WHERE id = $1`, [id]);
 }
 
 // Claims
-async function listClaims(supabase, { page = 0, pageSize = 50, patientId, status }) {
-  const from = page * pageSize;
-  const to = from + pageSize - 1;
-  let q = supabase
-    .from(CLAIMS)
-    .select('*', { count: 'exact' })
-    .order('created_at', { ascending: false })
-    .range(from, to);
-  if (patientId) q = q.eq('patient_id', patientId);
-  if (status) q = q.eq('status', status);
-  const { data, error, count } = await q;
-  if (error) throw error;
-  return { data: (data ?? []).map(claimFromDb), page, pageSize, total: count ?? 0 };
+async function listClaims(db, { page = 0, pageSize = 50, patientId, status }) {
+  const where = []; const params = [];
+  if (patientId) { params.push(patientId); where.push(`patient_id = $${params.length}`); }
+  if (status) { params.push(status); where.push(`status = $${params.length}`); }
+  const whereSQL = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  params.push(pageSize); const limitIdx = params.length;
+  params.push(page * pageSize); const offsetIdx = params.length;
+  const dataSQL = `SELECT * FROM insurance_claims ${whereSQL} ORDER BY created_at DESC LIMIT $${limitIdx} OFFSET $${offsetIdx}`;
+  const countParams = params.slice(0, params.length - 2);
+  const countSQL = `SELECT COUNT(*)::int AS count FROM insurance_claims ${whereSQL}`;
+  const [d, c] = await Promise.all([db.query(dataSQL, params), db.query(countSQL, countParams)]);
+  return { data: d.rows.map(claimFromDb), page, pageSize, total: c.rows[0].count };
 }
 
-async function getClaim(supabase, id) {
-  const { data, error } = await supabase.from(CLAIMS).select('*').eq('id', id).maybeSingle();
-  if (error) throw error;
-  return claimFromDb(data);
+async function getClaim(db, id) {
+  const r = await db.query(`SELECT * FROM insurance_claims WHERE id = $1`, [id]);
+  return claimFromDb(r.rows[0]);
 }
 
-async function createClaim(supabase, input, clinicId) {
-  const row = {
-    clinic_id: clinicId,
-    patient_id: input.patientId,
-    invoice_id: input.invoiceId ?? null,
-    policy_id: input.policyId ?? null,
-    status: input.status,
-    submitted_at: input.submittedAt ?? null,
-    amount_claimed: input.amountClaimed ?? null,
-    amount_reimbursed: input.amountReimbursed ?? null,
-    notes: input.notes ?? null,
-  };
-  const { data, error } = await supabase.from(CLAIMS).insert(row).select('*').single();
-  if (error) throw error;
-  return claimFromDb(data);
+async function createClaim(db, input, clinicId) {
+  const cols = ['clinic_id'];
+  const vals = [clinicId];
+  for (const [k, col] of Object.entries(CLAIM_COLS)) {
+    if (input[k] !== undefined) {
+      cols.push(col);
+      vals.push(input[k] ?? null);
+    }
+  }
+  const placeholders = vals.map((_, i) => `$${i + 1}`).join(', ');
+  const r = await db.query(
+    `INSERT INTO insurance_claims (${cols.join(', ')}) VALUES (${placeholders}) RETURNING *`,
+    vals,
+  );
+  return claimFromDb(r.rows[0]);
 }
 
-async function updateClaim(supabase, id, patch) {
-  const row = {};
-  if (patch.status !== undefined) row.status = patch.status;
-  if (patch.submittedAt !== undefined) row.submitted_at = patch.submittedAt ?? null;
-  if (patch.amountClaimed !== undefined) row.amount_claimed = patch.amountClaimed ?? null;
-  if (patch.amountReimbursed !== undefined) row.amount_reimbursed = patch.amountReimbursed ?? null;
-  if (patch.notes !== undefined) row.notes = patch.notes ?? null;
-  if (patch.invoiceId !== undefined) row.invoice_id = patch.invoiceId ?? null;
-  if (patch.policyId !== undefined) row.policy_id = patch.policyId ?? null;
-  const { data, error } = await supabase.from(CLAIMS).update(row).eq('id', id).select('*').single();
-  if (error) throw error;
-  return claimFromDb(data);
+async function updateClaim(db, id, patch) {
+  const sets = []; const params = [];
+  for (const [k, col] of Object.entries(CLAIM_COLS)) {
+    if (k === 'patientId') continue;
+    if (patch[k] !== undefined) {
+      params.push(patch[k] ?? null);
+      sets.push(`${col} = $${params.length}`);
+    }
+  }
+  if (sets.length === 0) return getClaim(db, id);
+  params.push(id);
+  const r = await db.query(
+    `UPDATE insurance_claims SET ${sets.join(', ')} WHERE id = $${params.length} RETURNING *`,
+    params,
+  );
+  return claimFromDb(r.rows[0]);
 }
 
 module.exports = {

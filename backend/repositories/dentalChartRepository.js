@@ -1,5 +1,4 @@
-const TABLE = 'dental_chart_entries';
-
+// Dental chart entries — pg.
 function fromDb(row) {
   if (!row) return null;
   return {
@@ -15,66 +14,71 @@ function fromDb(row) {
   };
 }
 
-function toDb(e) {
-  const row = {};
-  if (e.patientId !== undefined) row.patient_id = e.patientId;
-  if (e.tooth !== undefined) row.tooth = e.tooth;
-  if (e.surface !== undefined) row.surface = e.surface ?? null;
-  if (e.finding !== undefined) row.finding = e.finding;
-  if (e.notes !== undefined) row.notes = e.notes ?? null;
-  if (e.recordedAt !== undefined) row.recorded_at = e.recordedAt;
-  if (e.recordedBy !== undefined) row.recorded_by = e.recordedBy ?? null;
-  return row;
+const COLS = {
+  patientId: 'patient_id',
+  tooth: 'tooth',
+  surface: 'surface',
+  finding: 'finding',
+  notes: 'notes',
+  recordedAt: 'recorded_at',
+  recordedBy: 'recorded_by',
+};
+
+async function list(db, { page = 0, pageSize = 200, patientId }) {
+  const where = []; const params = [];
+  if (patientId) { params.push(patientId); where.push(`patient_id = $${params.length}`); }
+  const whereSQL = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  params.push(pageSize); const limitIdx = params.length;
+  params.push(page * pageSize); const offsetIdx = params.length;
+  const dataSQL = `SELECT * FROM dental_chart_entries ${whereSQL} ORDER BY recorded_at DESC LIMIT $${limitIdx} OFFSET $${offsetIdx}`;
+  const countParams = params.slice(0, params.length - 2);
+  const countSQL = `SELECT COUNT(*)::int AS count FROM dental_chart_entries ${whereSQL}`;
+  const [d, c] = await Promise.all([db.query(dataSQL, params), db.query(countSQL, countParams)]);
+  return { data: d.rows.map(fromDb), page, pageSize, total: c.rows[0].count };
 }
 
-async function list(supabase, { page = 0, pageSize = 200, patientId }) {
-  const from = page * pageSize;
-  const to = from + pageSize - 1;
-  let q = supabase
-    .from(TABLE)
-    .select('*', { count: 'exact' })
-    .order('recorded_at', { ascending: false })
-    .range(from, to);
-  if (patientId) q = q.eq('patient_id', patientId);
-  const { data, error, count } = await q;
-  if (error) throw error;
-  return { data: (data ?? []).map(fromDb), page, pageSize, total: count ?? 0 };
+async function get(db, id) {
+  const r = await db.query(`SELECT * FROM dental_chart_entries WHERE id = $1`, [id]);
+  return fromDb(r.rows[0]);
 }
 
-async function get(supabase, id) {
-  const { data, error } = await supabase.from(TABLE).select('*').eq('id', id).maybeSingle();
-  if (error) throw error;
-  return fromDb(data);
+async function create(db, input, clinicId) {
+  const cols = ['clinic_id', 'recorded_at'];
+  const vals = [clinicId, input.recordedAt ?? new Date().toISOString()];
+  for (const [k, col] of Object.entries(COLS)) {
+    if (k === 'recordedAt') continue;
+    if (input[k] !== undefined) {
+      cols.push(col);
+      vals.push(input[k] ?? null);
+    }
+  }
+  const placeholders = vals.map((_, i) => `$${i + 1}`).join(', ');
+  const r = await db.query(
+    `INSERT INTO dental_chart_entries (${cols.join(', ')}) VALUES (${placeholders}) RETURNING *`,
+    vals,
+  );
+  return fromDb(r.rows[0]);
 }
 
-async function create(supabase, input, clinicId) {
-  const { data, error } = await supabase
-    .from(TABLE)
-    .insert({
-      ...toDb(input),
-      clinic_id: clinicId,
-      recorded_at: input.recordedAt ?? new Date().toISOString(),
-    })
-    .select('*')
-    .single();
-  if (error) throw error;
-  return fromDb(data);
+async function update(db, id, patch) {
+  const sets = []; const params = [];
+  for (const [k, col] of Object.entries(COLS)) {
+    if (patch[k] !== undefined) {
+      params.push(patch[k] ?? null);
+      sets.push(`${col} = $${params.length}`);
+    }
+  }
+  if (sets.length === 0) return get(db, id);
+  params.push(id);
+  const r = await db.query(
+    `UPDATE dental_chart_entries SET ${sets.join(', ')} WHERE id = $${params.length} RETURNING *`,
+    params,
+  );
+  return fromDb(r.rows[0]);
 }
 
-async function update(supabase, id, patch) {
-  const { data, error } = await supabase
-    .from(TABLE)
-    .update(toDb(patch))
-    .eq('id', id)
-    .select('*')
-    .single();
-  if (error) throw error;
-  return fromDb(data);
-}
-
-async function remove(supabase, id) {
-  const { error } = await supabase.from(TABLE).delete().eq('id', id);
-  if (error) throw error;
+async function remove(db, id) {
+  await db.query(`DELETE FROM dental_chart_entries WHERE id = $1`, [id]);
 }
 
 module.exports = { list, get, create, update, remove };

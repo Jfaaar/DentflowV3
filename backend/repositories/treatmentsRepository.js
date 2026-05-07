@@ -1,5 +1,4 @@
-const TABLE = 'treatments';
-
+// Treatments — pg.
 const num = (v) => (v == null ? 0 : typeof v === 'number' ? v : Number(v) || 0);
 
 function fromDb(row, materials) {
@@ -17,81 +16,85 @@ function fromDb(row, materials) {
   };
 }
 
-async function list(supabase, { page = 0, pageSize = 200, patientId }) {
-  const from = page * pageSize;
-  const to = from + pageSize - 1;
-  let q = supabase
-    .from(TABLE)
-    .select('*', { count: 'exact' })
-    .order('created_at', { ascending: false })
-    .range(from, to);
-  if (patientId) q = q.eq('patient_id', patientId);
-  const { data, error, count } = await q;
-  if (error) throw error;
-  return { data: (data ?? []).map((r) => fromDb(r)), page, pageSize, total: count ?? 0 };
+async function list(db, { page = 0, pageSize = 200, patientId }) {
+  const where = []; const params = [];
+  if (patientId) { params.push(patientId); where.push(`patient_id = $${params.length}`); }
+  const whereSQL = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  params.push(pageSize); const limitIdx = params.length;
+  params.push(page * pageSize); const offsetIdx = params.length;
+
+  const dataSQL = `SELECT * FROM treatments ${whereSQL} ORDER BY created_at DESC LIMIT $${limitIdx} OFFSET $${offsetIdx}`;
+  const countParams = params.slice(0, params.length - 2);
+  const countSQL = `SELECT COUNT(*)::int AS count FROM treatments ${whereSQL}`;
+  const [d, c] = await Promise.all([db.query(dataSQL, params), db.query(countSQL, countParams)]);
+  return { data: d.rows.map((r) => fromDb(r)), page, pageSize, total: c.rows[0].count };
 }
 
-async function get(supabase, id) {
-  const { data, error } = await supabase.from(TABLE).select('*').eq('id', id).maybeSingle();
-  if (error) throw error;
-  return fromDb(data);
+async function get(db, id) {
+  const r = await db.query(`SELECT * FROM treatments WHERE id = $1`, [id]);
+  return fromDb(r.rows[0]);
 }
 
-async function create(supabase, input, clinicId) {
-  const row = {
-    clinic_id: clinicId,
-    patient_id: input.patientId,
-    tooth: input.tooth ?? null,
-    surface: input.surface ?? null,
-    description: input.description,
-    price: input.price,
-    status: input.status,
-    performed_at:
-      input.status === 'completed' ? input.date ?? new Date().toISOString() : null,
-  };
-  const { data, error } = await supabase.from(TABLE).insert(row).select('*').single();
-  if (error) throw error;
-
-  const created = fromDb(data, input.materialsUsed);
+async function create(db, input, clinicId) {
+  const performedAt = input.status === 'completed' ? input.date ?? new Date().toISOString() : null;
+  const r = await db.query(
+    `INSERT INTO treatments (clinic_id, patient_id, tooth, surface, description, price, status, performed_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+    [
+      clinicId, input.patientId, input.tooth ?? null, input.surface ?? null,
+      input.description, input.price, input.status, performedAt,
+    ],
+  );
+  const created = fromDb(r.rows[0], input.materialsUsed);
 
   if (
     input.status === 'completed' &&
     Array.isArray(input.materialsUsed) &&
     input.materialsUsed.length > 0
   ) {
-    const txRows = input.materialsUsed.map((m) => ({
-      clinic_id: clinicId,
-      item_id: m.itemId,
-      type: 'usage',
-      quantity: -Math.abs(m.quantity),
-      reason: `Clinical Use: ${input.description}`,
-      reference_id: created.id,
-    }));
-    await supabase.from('inventory_transactions').insert(txRows);
+    // Bulk insert deduction rows.
+    const values = [];
+    const placeholders = [];
+    let idx = 1;
+    for (const m of input.materialsUsed) {
+      values.push(
+        clinicId, m.itemId, 'usage', -Math.abs(m.quantity),
+        `Clinical Use: ${input.description}`, created.id,
+      );
+      placeholders.push(`($${idx++}, $${idx++}, $${idx++}, $${idx++}, $${idx++}, $${idx++})`);
+    }
+    await db.query(
+      `INSERT INTO inventory_transactions (clinic_id, item_id, type, quantity, reason, reference_id)
+       VALUES ${placeholders.join(', ')}`,
+      values,
+    );
   }
 
   return created;
 }
 
-async function update(supabase, id, patch) {
-  const row = {};
-  if (patch.tooth !== undefined) row.tooth = patch.tooth ?? null;
-  if (patch.surface !== undefined) row.surface = patch.surface ?? null;
-  if (patch.description !== undefined) row.description = patch.description;
-  if (patch.price !== undefined) row.price = patch.price;
+async function update(db, id, patch) {
+  const sets = []; const params = [];
+  const set = (col, val) => { params.push(val); sets.push(`${col} = $${params.length}`); };
+  if (patch.tooth !== undefined) set('tooth', patch.tooth ?? null);
+  if (patch.surface !== undefined) set('surface', patch.surface ?? null);
+  if (patch.description !== undefined) set('description', patch.description);
+  if (patch.price !== undefined) set('price', patch.price);
   if (patch.status !== undefined) {
-    row.status = patch.status;
-    row.performed_at =
-      patch.status === 'completed' ? patch.date ?? new Date().toISOString() : null;
+    set('status', patch.status);
+    set('performed_at', patch.status === 'completed' ? patch.date ?? new Date().toISOString() : null);
   }
-  const { data, error } = await supabase.from(TABLE).update(row).eq('id', id).select('*').single();
-  if (error) throw error;
-  return fromDb(data);
+  if (sets.length === 0) return get(db, id);
+  params.push(id);
+  const r = await db.query(
+    `UPDATE treatments SET ${sets.join(', ')} WHERE id = $${params.length} RETURNING *`,
+    params,
+  );
+  return fromDb(r.rows[0]);
 }
 
-async function cancel(supabase, id) {
-  const { error } = await supabase.from(TABLE).update({ status: 'canceled' }).eq('id', id);
-  if (error) throw error;
+async function cancel(db, id) {
+  await db.query(`UPDATE treatments SET status = 'canceled' WHERE id = $1`, [id]);
 }
 
 module.exports = { list, get, create, update, cancel };

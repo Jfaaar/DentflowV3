@@ -1,5 +1,4 @@
-const TABLE = 'payments';
-
+// Payments — pg.
 const num = (v) => (v == null ? 0 : typeof v === 'number' ? v : Number(v) || 0);
 
 function fromDb(row) {
@@ -18,57 +17,56 @@ function fromDb(row) {
   };
 }
 
-async function list(supabase, { page = 0, pageSize = 100, invoiceId }) {
-  const from = page * pageSize;
-  const to = from + pageSize - 1;
-  let q = supabase
-    .from(TABLE)
-    .select('*', { count: 'exact' })
-    .order('paid_at', { ascending: false })
-    .range(from, to);
-  if (invoiceId) q = q.eq('invoice_id', invoiceId);
-  const { data, error, count } = await q;
-  if (error) throw error;
-  return { data: (data ?? []).map(fromDb), page, pageSize, total: count ?? 0 };
+async function list(db, { page = 0, pageSize = 100, invoiceId }) {
+  const where = []; const params = [];
+  if (invoiceId) { params.push(invoiceId); where.push(`invoice_id = $${params.length}`); }
+  const whereSQL = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  params.push(pageSize); const limitIdx = params.length;
+  params.push(page * pageSize); const offsetIdx = params.length;
+
+  const dataSQL = `SELECT * FROM payments ${whereSQL} ORDER BY paid_at DESC LIMIT $${limitIdx} OFFSET $${offsetIdx}`;
+  const countParams = params.slice(0, params.length - 2);
+  const countSQL = `SELECT COUNT(*)::int AS count FROM payments ${whereSQL}`;
+  const [d, c] = await Promise.all([db.query(dataSQL, params), db.query(countSQL, countParams)]);
+  return { data: d.rows.map(fromDb), page, pageSize, total: c.rows[0].count };
 }
 
-async function get(supabase, id) {
-  const { data, error } = await supabase.from(TABLE).select('*').eq('id', id).maybeSingle();
-  if (error) throw error;
-  return fromDb(data);
+async function get(db, id) {
+  const r = await db.query(`SELECT * FROM payments WHERE id = $1`, [id]);
+  return fromDb(r.rows[0]);
 }
 
-async function create(supabase, input, clinicId) {
-  const row = {
-    clinic_id: clinicId,
-    invoice_id: input.invoiceId,
-    amount: input.amount,
-    method: input.method ?? 'cash',
-    paid_at: input.date ?? new Date().toISOString(),
-    note: input.note ?? null,
-  };
-  const { data, error } = await supabase.from(TABLE).insert(row).select('*').single();
-  if (error) throw error;
-  return fromDb(data);
+async function create(db, input, clinicId) {
+  const r = await db.query(
+    `INSERT INTO payments (clinic_id, invoice_id, amount, method, paid_at, note)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+    [clinicId, input.invoiceId, input.amount, input.method ?? 'cash',
+     input.date ?? new Date().toISOString(), input.note ?? null],
+  );
+  return fromDb(r.rows[0]);
 }
 
-async function update(supabase, id, patch) {
-  const row = {};
-  if (patch.amount !== undefined) row.amount = patch.amount;
-  if (patch.method !== undefined) row.method = patch.method;
-  if (patch.date !== undefined) row.paid_at = patch.date;
-  if (patch.note !== undefined) row.note = patch.note ?? null;
-  const { data, error } = await supabase.from(TABLE).update(row).eq('id', id).select('*').single();
-  if (error) throw error;
-  return fromDb(data);
+async function update(db, id, patch) {
+  const sets = []; const params = [];
+  const set = (col, val) => { params.push(val); sets.push(`${col} = $${params.length}`); };
+  if (patch.amount !== undefined) set('amount', patch.amount);
+  if (patch.method !== undefined) set('method', patch.method);
+  if (patch.date !== undefined) set('paid_at', patch.date);
+  if (patch.note !== undefined) set('note', patch.note ?? null);
+  if (sets.length === 0) return get(db, id);
+  params.push(id);
+  const r = await db.query(
+    `UPDATE payments SET ${sets.join(', ')} WHERE id = $${params.length} RETURNING *`,
+    params,
+  );
+  return fromDb(r.rows[0]);
 }
 
-async function refund(supabase, id) {
-  const { error } = await supabase
-    .from(TABLE)
-    .update({ refunded: true, refunded_at: new Date().toISOString() })
-    .eq('id', id);
-  if (error) throw error;
+async function refund(db, id) {
+  await db.query(
+    `UPDATE payments SET refunded = TRUE, refunded_at = NOW() WHERE id = $1`,
+    [id],
+  );
 }
 
 module.exports = { list, get, create, update, refund };

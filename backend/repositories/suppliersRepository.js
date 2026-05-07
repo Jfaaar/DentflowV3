@@ -1,5 +1,4 @@
-const TABLE = 'suppliers';
-
+// Suppliers — pg.
 function fromDb(row) {
   if (!row) return null;
   return {
@@ -12,60 +11,68 @@ function fromDb(row) {
   };
 }
 
-function toDb(s) {
-  const row = {};
-  if (s.name !== undefined) row.name = s.name;
-  if (s.contactPerson !== undefined) row.contact_person = s.contactPerson ?? null;
-  if (s.phone !== undefined) row.phone = s.phone ?? null;
-  if (s.email !== undefined) row.email = s.email ?? null;
-  if (s.address !== undefined) row.address = s.address ?? null;
-  return row;
+const COLS = {
+  name: 'name',
+  contactPerson: 'contact_person',
+  phone: 'phone',
+  email: 'email',
+  address: 'address',
+};
+
+async function list(db, { page = 0, pageSize = 200, search }) {
+  const where = []; const params = [];
+  if (search?.trim()) { params.push(`%${search.trim()}%`); where.push(`name ILIKE $${params.length}`); }
+  const whereSQL = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  params.push(pageSize); const limitIdx = params.length;
+  params.push(page * pageSize); const offsetIdx = params.length;
+  const dataSQL = `SELECT * FROM suppliers ${whereSQL} ORDER BY name ASC LIMIT $${limitIdx} OFFSET $${offsetIdx}`;
+  const countParams = params.slice(0, params.length - 2);
+  const countSQL = `SELECT COUNT(*)::int AS count FROM suppliers ${whereSQL}`;
+  const [d, c] = await Promise.all([db.query(dataSQL, params), db.query(countSQL, countParams)]);
+  return { data: d.rows.map(fromDb), page, pageSize, total: c.rows[0].count };
 }
 
-async function list(supabase, { page = 0, pageSize = 200, search }) {
-  const from = page * pageSize;
-  const to = from + pageSize - 1;
-  let q = supabase
-    .from(TABLE)
-    .select('*', { count: 'exact' })
-    .order('name', { ascending: true })
-    .range(from, to);
-  if (search?.trim()) q = q.ilike('name', `%${search.trim()}%`);
-  const { data, error, count } = await q;
-  if (error) throw error;
-  return { data: (data ?? []).map(fromDb), page, pageSize, total: count ?? 0 };
+async function get(db, id) {
+  const r = await db.query(`SELECT * FROM suppliers WHERE id = $1`, [id]);
+  return fromDb(r.rows[0]);
 }
 
-async function get(supabase, id) {
-  const { data, error } = await supabase.from(TABLE).select('*').eq('id', id).maybeSingle();
-  if (error) throw error;
-  return fromDb(data);
+async function create(db, input, clinicId) {
+  const cols = ['clinic_id'];
+  const vals = [clinicId];
+  for (const [k, col] of Object.entries(COLS)) {
+    if (input[k] !== undefined) {
+      cols.push(col);
+      vals.push(input[k] ?? null);
+    }
+  }
+  const placeholders = vals.map((_, i) => `$${i + 1}`).join(', ');
+  const r = await db.query(
+    `INSERT INTO suppliers (${cols.join(', ')}) VALUES (${placeholders}) RETURNING *`,
+    vals,
+  );
+  return fromDb(r.rows[0]);
 }
 
-async function create(supabase, input, clinicId) {
-  const { data, error } = await supabase
-    .from(TABLE)
-    .insert({ ...toDb(input), clinic_id: clinicId })
-    .select('*')
-    .single();
-  if (error) throw error;
-  return fromDb(data);
+async function update(db, id, patch) {
+  const sets = []; const params = [];
+  for (const [k, col] of Object.entries(COLS)) {
+    if (patch[k] !== undefined) {
+      params.push(patch[k] ?? null);
+      sets.push(`${col} = $${params.length}`);
+    }
+  }
+  if (sets.length === 0) return get(db, id);
+  params.push(id);
+  const r = await db.query(
+    `UPDATE suppliers SET ${sets.join(', ')} WHERE id = $${params.length} RETURNING *`,
+    params,
+  );
+  return fromDb(r.rows[0]);
 }
 
-async function update(supabase, id, patch) {
-  const { data, error } = await supabase
-    .from(TABLE)
-    .update(toDb(patch))
-    .eq('id', id)
-    .select('*')
-    .single();
-  if (error) throw error;
-  return fromDb(data);
-}
-
-async function remove(supabase, id) {
-  const { error } = await supabase.from(TABLE).delete().eq('id', id);
-  if (error) throw error;
+async function remove(db, id) {
+  await db.query(`DELETE FROM suppliers WHERE id = $1`, [id]);
 }
 
 module.exports = { list, get, create, update, remove };

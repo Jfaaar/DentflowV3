@@ -1,5 +1,4 @@
-const TABLE = 'clinic_settings';
-
+// Clinic settings — pg. One row per clinic_id.
 function fromDb(row) {
   if (!row) return null;
   return {
@@ -19,41 +18,48 @@ function fromDb(row) {
   };
 }
 
-function toDb(s) {
-  const row = {};
-  if (s.logoUrl !== undefined) row.logo_url = s.logoUrl ?? null;
-  if (s.taxId !== undefined) row.tax_id = s.taxId ?? null;
-  if (s.currency !== undefined) row.currency = s.currency;
-  if (s.timezone !== undefined) row.timezone = s.timezone;
-  if (s.defaultLanguage !== undefined) row.default_language = s.defaultLanguage;
-  if (s.workingHours !== undefined) row.working_hours = s.workingHours ?? null;
-  if (s.defaultAppointmentMinutes !== undefined)
-    row.default_appointment_minutes = s.defaultAppointmentMinutes;
-  if (s.invoiceNumberFormat !== undefined) row.invoice_number_format = s.invoiceNumberFormat;
-  if (s.invoiceSeq !== undefined) row.invoice_seq = s.invoiceSeq;
-  if (s.prescriptionTemplate !== undefined) row.prescription_template = s.prescriptionTemplate ?? null;
-  if (s.quoteTemplate !== undefined) row.quote_template = s.quoteTemplate ?? null;
-  return row;
+const COLS = {
+  logoUrl: 'logo_url',
+  taxId: 'tax_id',
+  currency: 'currency',
+  timezone: 'timezone',
+  defaultLanguage: 'default_language',
+  workingHours: 'working_hours',
+  defaultAppointmentMinutes: 'default_appointment_minutes',
+  invoiceNumberFormat: 'invoice_number_format',
+  invoiceSeq: 'invoice_seq',
+  prescriptionTemplate: 'prescription_template',
+  quoteTemplate: 'quote_template',
+};
+
+async function get(db, clinicId) {
+  const r = await db.query(
+    `SELECT * FROM clinic_settings WHERE clinic_id = $1 LIMIT 1`,
+    [clinicId],
+  );
+  return fromDb(r.rows[0]);
 }
 
-async function get(supabase, clinicId) {
-  const { data, error } = await supabase
-    .from(TABLE)
-    .select('*')
-    .eq('clinic_id', clinicId)
-    .maybeSingle();
-  if (error) throw error;
-  return fromDb(data);
-}
-
-async function upsert(supabase, clinicId, patch) {
-  const { data, error } = await supabase
-    .from(TABLE)
-    .upsert({ clinic_id: clinicId, ...toDb(patch) }, { onConflict: 'clinic_id' })
-    .select('*')
-    .single();
-  if (error) throw error;
-  return fromDb(data);
+async function upsert(db, clinicId, patch) {
+  // Build an INSERT ... ON CONFLICT (clinic_id) DO UPDATE SET ...
+  const cols = ['clinic_id'];
+  const vals = [clinicId];
+  for (const [k, col] of Object.entries(COLS)) {
+    if (patch[k] !== undefined) {
+      cols.push(col);
+      vals.push(patch[k] ?? null);
+    }
+  }
+  if (cols.length === 1) return get(db, clinicId);
+  const placeholders = vals.map((_, i) => `$${i + 1}`).join(', ');
+  const updates = cols.slice(1).map((c) => `${c} = EXCLUDED.${c}`).join(', ');
+  const r = await db.query(
+    `INSERT INTO clinic_settings (${cols.join(', ')}) VALUES (${placeholders})
+     ON CONFLICT (clinic_id) DO UPDATE SET ${updates}, updated_at = NOW()
+     RETURNING *`,
+    vals,
+  );
+  return fromDb(r.rows[0]);
 }
 
 module.exports = { get, upsert };

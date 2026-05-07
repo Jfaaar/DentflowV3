@@ -10,13 +10,13 @@ function requireClinic(req) {
 
 async function getSettings(req) {
   const clinicId = requireClinic(req);
-  const settings = await repo.get(req.supabase, clinicId);
+  const settings = await repo.get(req.db, clinicId);
   // Caller may receive null on first load; that's fine — clients render defaults.
   return settings;
 }
 
 function updateSettings(req, patch) {
-  return repo.upsert(req.supabase, requireClinic(req), patch);
+  return repo.upsert(req.db, requireClinic(req), patch);
 }
 
 module.exports = { getSettings, updateSettings };

@@ -10,46 +10,46 @@ function requireClinic(req) {
 
 // Providers
 function listProviders(req) {
-  return repo.listProviders(req.supabase);
+  return repo.listProviders(req.db);
 }
 
 // Policies
 function listPolicies(req, query) {
-  return repo.listPolicies(req.supabase, query);
+  return repo.listPolicies(req.db, query);
 }
 async function getPolicy(req, id) {
-  const p = await repo.getPolicy(req.supabase, id);
+  const p = await repo.getPolicy(req.db, id);
   if (!p) throw new ApiError(404, 'NOT_FOUND', 'Policy not found');
   return p;
 }
 function createPolicy(req, input) {
-  return repo.createPolicy(req.supabase, input, requireClinic(req));
+  return repo.createPolicy(req.db, input, requireClinic(req));
 }
 async function updatePolicy(req, id, patch) {
-  const existing = await repo.getPolicy(req.supabase, id);
+  const existing = await repo.getPolicy(req.db, id);
   if (!existing) throw new ApiError(404, 'NOT_FOUND', 'Policy not found');
-  return repo.updatePolicy(req.supabase, id, patch);
+  return repo.updatePolicy(req.db, id, patch);
 }
 async function deletePolicy(req, id) {
-  await repo.deletePolicy(req.supabase, id);
+  await repo.deletePolicy(req.db, id);
 }
 
 // Claims
 function listClaims(req, query) {
-  return repo.listClaims(req.supabase, query);
+  return repo.listClaims(req.db, query);
 }
 async function getClaim(req, id) {
-  const c = await repo.getClaim(req.supabase, id);
+  const c = await repo.getClaim(req.db, id);
   if (!c) throw new ApiError(404, 'NOT_FOUND', 'Claim not found');
   return c;
 }
 function createClaim(req, input) {
-  return repo.createClaim(req.supabase, input, requireClinic(req));
+  return repo.createClaim(req.db, input, requireClinic(req));
 }
 async function updateClaim(req, id, patch) {
-  const existing = await repo.getClaim(req.supabase, id);
+  const existing = await repo.getClaim(req.db, id);
   if (!existing) throw new ApiError(404, 'NOT_FOUND', 'Claim not found');
-  return repo.updateClaim(req.supabase, id, patch);
+  return repo.updateClaim(req.db, id, patch);
 }
 
 module.exports = {

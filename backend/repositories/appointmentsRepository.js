@@ -1,12 +1,14 @@
-const TABLE = 'appointments';
-const SELECT_WITH_PATIENT = '*, patient:patients(full_name)';
+// Appointments — pg.
+const SELECT = `a.id, a.patient_id, a.starts_at, a.ends_at, a.status,
+  a.observation, a.created_at, p.full_name AS patient_full_name`;
+const FROM_JOIN = `appointments a LEFT JOIN patients p ON p.id = a.patient_id`;
 
 function fromDb(row) {
   if (!row) return null;
   return {
     id: row.id,
     patientId: row.patient_id,
-    patientName: row.patient?.full_name ?? '',
+    patientName: row.patient_full_name ?? '',
     start: row.starts_at,
     end: row.ends_at,
     status: row.status,
@@ -15,85 +17,64 @@ function fromDb(row) {
   };
 }
 
-function toDb(a) {
-  const row = {};
-  if (a.patientId !== undefined) row.patient_id = a.patientId;
-  if (a.start !== undefined) row.starts_at = a.start;
-  if (a.end !== undefined) row.ends_at = a.end;
-  if (a.status !== undefined) row.status = a.status;
-  if (a.observation !== undefined) row.observation = a.observation || null;
-  return row;
+async function list(db, { page = 0, pageSize = 200, patientId, status, from, to }) {
+  const where = [];
+  const params = [];
+  if (patientId) { params.push(patientId); where.push(`a.patient_id = $${params.length}`); }
+  if (status) { params.push(status); where.push(`a.status = $${params.length}`); }
+  if (from) { params.push(from); where.push(`a.starts_at >= $${params.length}`); }
+  if (to) { params.push(to); where.push(`a.starts_at <= $${params.length}`); }
+  const whereSQL = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+  params.push(pageSize); const limitIdx = params.length;
+  params.push(page * pageSize); const offsetIdx = params.length;
+
+  const dataSQL = `SELECT ${SELECT} FROM ${FROM_JOIN} ${whereSQL} ORDER BY a.starts_at ASC LIMIT $${limitIdx} OFFSET $${offsetIdx}`;
+  const countParams = params.slice(0, params.length - 2);
+  const countSQL = `SELECT COUNT(*)::int AS count FROM appointments a ${whereSQL.replace(/a\./g, 'a.')}`;
+
+  const [d, c] = await Promise.all([db.query(dataSQL, params), db.query(countSQL, countParams)]);
+  return { data: d.rows.map(fromDb), page, pageSize, total: c.rows[0].count };
 }
 
-async function list(supabase, { page = 0, pageSize = 200, patientId, status, from, to }) {
-  const fromIdx = page * pageSize;
-  const toIdx = fromIdx + pageSize - 1;
-
-  let q = supabase
-    .from(TABLE)
-    .select(SELECT_WITH_PATIENT, { count: 'exact' })
-    .order('starts_at', { ascending: true })
-    .range(fromIdx, toIdx);
-
-  if (patientId) q = q.eq('patient_id', patientId);
-  if (status) q = q.eq('status', status);
-  if (from) q = q.gte('starts_at', from);
-  if (to) q = q.lte('starts_at', to);
-
-  const { data, error, count } = await q;
-  if (error) throw error;
-  return {
-    data: (data ?? []).map(fromDb),
-    page,
-    pageSize,
-    total: count ?? 0,
-  };
+async function get(db, id) {
+  const r = await db.query(`SELECT ${SELECT} FROM ${FROM_JOIN} WHERE a.id = $1`, [id]);
+  return fromDb(r.rows[0]);
 }
 
-async function get(supabase, id) {
-  const { data, error } = await supabase
-    .from(TABLE)
-    .select(SELECT_WITH_PATIENT)
-    .eq('id', id)
-    .maybeSingle();
-  if (error) throw error;
-  return fromDb(data);
+async function create(db, input, clinicId) {
+  const r = await db.query(
+    `INSERT INTO appointments (clinic_id, patient_id, starts_at, ends_at, status, observation)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+    [clinicId, input.patientId, input.start, input.end, input.status ?? 'pending', input.observation || null],
+  );
+  return get(db, r.rows[0].id);
 }
 
-async function create(supabase, input, clinicId) {
-  const row = { ...toDb(input), clinic_id: clinicId };
-  const { data, error } = await supabase
-    .from(TABLE)
-    .insert(row)
-    .select(SELECT_WITH_PATIENT)
-    .single();
-  if (error) throw error;
-  return fromDb(data);
+async function update(db, id, patch) {
+  const sets = []; const params = [];
+  const set = (col, val) => { params.push(val); sets.push(`${col} = $${params.length}`); };
+  if (patch.patientId !== undefined) set('patient_id', patch.patientId);
+  if (patch.start !== undefined) set('starts_at', patch.start);
+  if (patch.end !== undefined) set('ends_at', patch.end);
+  if (patch.status !== undefined) set('status', patch.status);
+  if (patch.observation !== undefined) set('observation', patch.observation || null);
+  if (sets.length === 0) return get(db, id);
+  params.push(id);
+  await db.query(`UPDATE appointments SET ${sets.join(', ')} WHERE id = $${params.length}`, params);
+  return get(db, id);
 }
 
-async function update(supabase, id, patch) {
-  const { data, error } = await supabase
-    .from(TABLE)
-    .update(toDb(patch))
-    .eq('id', id)
-    .select(SELECT_WITH_PATIENT)
-    .single();
-  if (error) throw error;
-  return fromDb(data);
+async function cancel(db, id, reason) {
+  await db.query(
+    `UPDATE appointments SET status = 'canceled', cancellation_reason = $1 WHERE id = $2`,
+    [reason ?? null, id],
+  );
 }
 
-async function cancel(supabase, id, reason) {
-  const { error } = await supabase
-    .from(TABLE)
-    .update({ status: 'canceled', cancellation_reason: reason ?? null })
-    .eq('id', id);
-  if (error) throw error;
-}
-
-async function cancelMany(supabase, ids) {
+async function cancelMany(db, ids) {
   if (!ids.length) return;
-  const { error } = await supabase.from(TABLE).update({ status: 'canceled' }).in('id', ids);
-  if (error) throw error;
+  await db.query(`UPDATE appointments SET status = 'canceled' WHERE id = ANY($1::uuid[])`, [ids]);
 }
 
 module.exports = { list, get, create, update, cancel, cancelMany };

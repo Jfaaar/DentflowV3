@@ -75,9 +75,9 @@ function createApp() {
         useDefaults: true,
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", 'https://*.supabase.co'],
-          connectSrc: ["'self'", 'https://*.supabase.co', 'wss://*.supabase.co'],
-          imgSrc: ["'self'", 'data:', 'blob:', 'https://*.supabase.co'],
+          scriptSrc: ["'self'"],
+          connectSrc: ["'self'"],
+          imgSrc: ["'self'", 'data:', 'blob:'],
           styleSrc: ["'self'", "'unsafe-inline'"],
           fontSrc: ["'self'", 'data:'],
           frameAncestors: ["'self'"],

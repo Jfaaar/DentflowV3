@@ -1,16 +1,15 @@
-// Audit logging middleware.
+// Audit logging middleware — pg.
 // Wraps a route to insert an audit_logs row when the response status is < 400.
 // Use it as: router.post('/foo', auth, audit('clinic.create', { resource: 'clinic' }), handler)
 //
-// Insertion is best-effort: if Supabase isn't configured or the insert fails,
-// the request is NOT failed. Errors are logged.
-const { supabaseAdmin } = require('../lib/supabase');
+// Insertion is best-effort: failures are logged but never propagated to
+// the response.
+const { getPool } = require('../db/pg');
 
 function audit(action, options = {}) {
   return function auditMiddleware(req, res, next) {
     const start = Date.now();
 
-    // Capture response body to derive resource ids when possible
     let captured;
     const origJson = res.json.bind(res);
     res.json = (body) => {
@@ -20,7 +19,12 @@ function audit(action, options = {}) {
 
     res.on('finish', async () => {
       if (res.statusCode >= 400) return;
-      if (!supabaseAdmin) return;
+      let pool;
+      try {
+        pool = getPool();
+      } catch {
+        return; // No DB configured; skip silently.
+      }
 
       try {
         const resourceId = (() => {
@@ -35,28 +39,27 @@ function audit(action, options = {}) {
           return req.params?.id ? String(req.params.id) : null;
         })();
 
-        const row = {
-          action,
-          actor_id: req.user?.id || null,
-          actor_role: req.user?.role || null,
-          resource: options.resource || null,
-          resource_id: resourceId,
-          ip: req.ip || req.headers['x-forwarded-for'] || null,
-          user_agent: req.headers['user-agent'] || null,
-          status_code: res.statusCode,
-          duration_ms: Date.now() - start,
-          metadata: options.metadata ? options.metadata(req, captured) : null,
-          created_at: new Date().toISOString(),
-        };
-
-        const { error } = await supabaseAdmin.from('audit_logs').insert(row);
-        if (error) {
-          // eslint-disable-next-line no-console
-          console.warn('[audit] insert failed:', error.message);
-        }
+        await pool.query(
+          `INSERT INTO audit_logs
+             (action, actor_id, actor_role, resource, resource_id, ip,
+              user_agent, status_code, duration_ms, metadata, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())`,
+          [
+            action,
+            req.user?.id || null,
+            req.user?.role || null,
+            options.resource || null,
+            resourceId,
+            req.ip || req.headers['x-forwarded-for'] || null,
+            req.headers['user-agent'] || null,
+            res.statusCode,
+            Date.now() - start,
+            options.metadata ? options.metadata(req, captured) : null,
+          ],
+        );
       } catch (err) {
         // eslint-disable-next-line no-console
-        console.warn('[audit] unexpected error:', err?.message || err);
+        console.warn('[audit] insert failed:', err?.message || err);
       }
     });
 
