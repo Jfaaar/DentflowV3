@@ -69,7 +69,7 @@ const ClinicShell: React.FC = () => {
 };
 
 const PatientScopedRoute: React.FC<{
-  Component: React.FC<{ patientId: string; patientName?: string; onBack: () => void }>;
+  Component: React.FC<{ patientId: string; patientName?: string; onBack?: () => void }>;
 }> = ({ Component }) => {
   const { patientId } = useParams<{ patientId: string }>();
   const navigate = useNavigate();

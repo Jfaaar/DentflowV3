@@ -64,7 +64,7 @@ export const DayView: React.FC<DayViewProps> = ({ date, appointments, onEditAppo
 
                 if (top === null) return null;
 
-                const statusColors = {
+                const statusColors: Record<string, string> = {
                     confirmed: 'bg-blue-100 border-blue-300 text-blue-800 hover:bg-blue-200 hover:z-20',
                     pending: 'bg-orange-100 border-orange-300 text-orange-800 hover:bg-orange-200 hover:z-20',
                     canceled: 'bg-red-50 border-red-200 text-red-800 opacity-60 grayscale hover:grayscale-0 hover:z-10'
