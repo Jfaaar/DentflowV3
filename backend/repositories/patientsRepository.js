@@ -1,8 +1,17 @@
-// Patients data access. Only this file (and the rest of repositories/) speaks
-// directly to Supabase tables. Services should never import the Supabase client.
+// Patients data access — plain Postgres via the pg pool.
 //
-// Column convention: snake_case in DB, camelCase in DTO. The mapping is
-// hand-rolled per repository — unfamiliar fields are an explicit choice.
+// Convention:
+//   • First argument is `db` (a pg Pool or a pooled client from
+//     pool.connect()). The auth middleware attaches the pool as req.db.
+//   • snake_case columns at the DB boundary, camelCase DTOs above it.
+//     Mapping is hand-rolled per repository so unfamiliar columns are
+//     an explicit choice, not silent passthrough.
+//
+// This is the template for the rest of the 15 repositories that are
+// still on the legacy supabase-js client. The pattern is:
+//   1. Build a parameterized SQL string with $1, $2, … placeholders.
+//   2. Use db.query(text, values) — never string interpolation.
+//   3. Map rows → DTO via a per-table fromDb().
 
 const TABLE = 'patients';
 
@@ -32,106 +41,133 @@ function fromDb(row, mh) {
   };
 }
 
-function toDb(p, clinicId) {
-  const row = {};
-  if (p.name !== undefined) row.full_name = p.name;
-  if (p.phone !== undefined) row.phone = p.phone || null;
-  if (p.email !== undefined) row.email = p.email || null;
-  if (p.profilePicture !== undefined) row.profile_picture = p.profilePicture || null;
-  if (p.address !== undefined) row.address = p.address || null;
-  if (p.birthDate !== undefined) row.birth_date = p.birthDate || null;
-  if (p.gender !== undefined) row.gender = p.gender || null;
-  if (p.insuranceProvider !== undefined) row.insurance_provider = p.insuranceProvider || null;
-  if (p.status !== undefined) {
-    row.status = p.status;
-    row.archived_at = p.status === 'archived' ? new Date().toISOString() : null;
+async function list(db, { page = 0, pageSize = 50, search, status }) {
+  const where = [];
+  const params = [];
+  if (status) {
+    params.push(status);
+    where.push(`status = $${params.length}`);
   }
-  if (clinicId) row.clinic_id = clinicId;
-  return row;
-}
-
-async function list(supabase, { page = 0, pageSize = 50, search, status }) {
-  const from = page * pageSize;
-  const to = from + pageSize - 1;
-
-  let q = supabase
-    .from(TABLE)
-    .select('*', { count: 'exact' })
-    .order('created_at', { ascending: false })
-    .range(from, to);
-
-  if (status) q = q.eq('status', status);
-
   if (search && search.trim()) {
-    const term = search.trim().replace(/[,()]/g, '');
-    q = q.or(
-      `full_name.ilike.%${term}%,phone.ilike.%${term}%,email.ilike.%${term}%`
-    );
+    params.push(`%${search.trim()}%`);
+    const idx = params.length;
+    where.push(`(full_name ILIKE $${idx} OR phone ILIKE $${idx} OR email ILIKE $${idx})`);
   }
+  const whereSQL = where.length ? `WHERE ${where.join(' AND ')}` : '';
 
-  const { data, error, count } = await q;
-  if (error) throw error;
+  params.push(pageSize);
+  const limitIdx = params.length;
+  params.push(page * pageSize);
+  const offsetIdx = params.length;
+
+  const dataSQL = `
+    SELECT *
+    FROM ${TABLE}
+    ${whereSQL}
+    ORDER BY created_at DESC
+    LIMIT $${limitIdx} OFFSET $${offsetIdx}
+  `;
+  // Re-use the same WHERE params (without LIMIT/OFFSET) for the count query.
+  const countParams = params.slice(0, params.length - 2);
+  const countSQL = `SELECT COUNT(*)::int AS count FROM ${TABLE} ${whereSQL}`;
+
+  const [dataRes, countRes] = await Promise.all([
+    db.query(dataSQL, params),
+    db.query(countSQL, countParams),
+  ]);
+
   return {
-    data: (data ?? []).map((r) => fromDb(r)),
+    data: dataRes.rows.map((r) => fromDb(r)),
     page,
     pageSize,
-    total: count ?? 0,
+    total: countRes.rows[0].count,
   };
 }
 
-async function get(supabase, id) {
-  const { data, error } = await supabase
-    .from(TABLE)
-    .select('*')
-    .eq('id', id)
-    .maybeSingle();
-  if (error) throw error;
-  if (!data) return null;
+async function get(db, id) {
+  const row = await db.query(`SELECT * FROM ${TABLE} WHERE id = $1`, [id]);
+  if (row.rowCount === 0) return null;
 
-  const { data: mh } = await supabase
-    .from('patient_medical_history')
-    .select('*')
-    .eq('patient_id', id)
-    .maybeSingle();
-
-  return fromDb(data, mh);
+  const mh = await db.query(
+    `SELECT * FROM patient_medical_history WHERE patient_id = $1 LIMIT 1`,
+    [id],
+  );
+  return fromDb(row.rows[0], mh.rows[0]);
 }
 
-async function create(supabase, input, clinicId) {
-  const row = toDb({ status: 'active', ...input }, clinicId);
-  const { data, error } = await supabase
-    .from(TABLE)
-    .insert(row)
-    .select('*')
-    .single();
-  if (error) throw error;
-  return fromDb(data);
+async function create(db, input, clinicId) {
+  const status = input.status ?? 'active';
+  const archivedAt = status === 'archived' ? new Date().toISOString() : null;
+
+  const cols = [
+    'clinic_id', 'full_name', 'phone', 'email', 'profile_picture',
+    'address', 'birth_date', 'gender', 'insurance_provider', 'status',
+    'archived_at',
+  ];
+  const vals = [
+    clinicId,
+    input.name,
+    input.phone || null,
+    input.email || null,
+    input.profilePicture || null,
+    input.address || null,
+    input.birthDate || null,
+    input.gender || null,
+    input.insuranceProvider || null,
+    status,
+    archivedAt,
+  ];
+  const placeholders = vals.map((_, i) => `$${i + 1}`).join(', ');
+  const res = await db.query(
+    `INSERT INTO ${TABLE} (${cols.join(', ')}) VALUES (${placeholders}) RETURNING *`,
+    vals,
+  );
+  return fromDb(res.rows[0]);
 }
 
-async function update(supabase, id, patch) {
-  const row = toDb(patch, '');
-  delete row.clinic_id;
-  const { data, error } = await supabase
-    .from(TABLE)
-    .update(row)
-    .eq('id', id)
-    .select('*')
-    .single();
-  if (error) throw error;
-  return fromDb(data);
+async function update(db, id, patch) {
+  const sets = [];
+  const params = [];
+  const push = (col, val) => {
+    params.push(val);
+    sets.push(`${col} = $${params.length}`);
+  };
+
+  if (patch.name !== undefined) push('full_name', patch.name);
+  if (patch.phone !== undefined) push('phone', patch.phone || null);
+  if (patch.email !== undefined) push('email', patch.email || null);
+  if (patch.profilePicture !== undefined) push('profile_picture', patch.profilePicture || null);
+  if (patch.address !== undefined) push('address', patch.address || null);
+  if (patch.birthDate !== undefined) push('birth_date', patch.birthDate || null);
+  if (patch.gender !== undefined) push('gender', patch.gender || null);
+  if (patch.insuranceProvider !== undefined) push('insurance_provider', patch.insuranceProvider || null);
+  if (patch.status !== undefined) {
+    push('status', patch.status);
+    push('archived_at', patch.status === 'archived' ? new Date().toISOString() : null);
+  }
+
+  if (sets.length === 0) {
+    // No updatable fields — just return the current row.
+    return get(db, id);
+  }
+
+  params.push(id);
+  const res = await db.query(
+    `UPDATE ${TABLE} SET ${sets.join(', ')} WHERE id = $${params.length} RETURNING *`,
+    params,
+  );
+  return fromDb(res.rows[0]);
 }
 
-async function archive(supabase, id) {
-  const { error } = await supabase
-    .from(TABLE)
-    .update({ status: 'archived', archived_at: new Date().toISOString() })
-    .eq('id', id);
-  if (error) throw error;
+async function archive(db, id) {
+  await db.query(
+    `UPDATE ${TABLE} SET status = 'archived', archived_at = NOW() WHERE id = $1`,
+    [id],
+  );
 }
 
-async function remove(supabase, id) {
-  const { error } = await supabase.from(TABLE).delete().eq('id', id);
-  if (error) throw error;
+async function remove(db, id) {
+  await db.query(`DELETE FROM ${TABLE} WHERE id = $1`, [id]);
 }
 
 module.exports = { list, get, create, update, archive, remove };

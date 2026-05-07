@@ -1,12 +1,51 @@
-// Supabase token validation middleware.
-// Validates the Bearer access token, attaches req.user and req.supabase.
+// Auth middleware. Two modes:
 //
-// req.supabase is a per-request user-scoped Supabase client whose Authorization
-// header is the validated token, so RLS still applies in repositories.
+//   1. BACKEND_DEV_AUTH=true (or NODE_ENV !== 'production' AND no
+//      SUPABASE_URL set) → DEV BYPASS. Skips token validation, attaches
+//      a synthesized req.user matching the dev seed in
+//      backend/db/init/99_dev_seed.sql, and attaches the local pg pool
+//      as req.db. Pairs with the demo/demo bypass on the frontend.
+//
+//   2. Supabase token mode (default in production). Validates the
+//      Bearer JWT via supabaseAuth.auth.getUser(), reads the profile,
+//      attaches req.user. The user-scoped Supabase client is exposed
+//      as req.supabase for repositories that haven't been rewritten to
+//      pg yet (rewriting them is in flight — see patientsRepository as
+//      the template).
+//
+// Either mode also attaches req.db (the pg pool) so repositories that
+// have been migrated to plain Postgres work uniformly.
 const { supabaseAuth, supabaseAdmin } = require('../lib/supabase');
 const { makeUserClient } = require('../db/supabase');
+const { getPool } = require('../db/pg');
+
+const DEV_USER = {
+  id: '00000000-0000-0000-0000-000000000001',
+  email: 'demo@dentflow.local',
+  role: 'clinic_admin',
+  name: 'Demo User',
+  clinicId: '00000000-0000-0000-0000-0000000000c1',
+};
+
+function devAuthEnabled() {
+  // Tests always exercise the real auth gate (the existing supertest specs
+  // assert 401 on unauthenticated requests).
+  if (process.env.NODE_ENV === 'test' || process.env.VITEST) return false;
+  if (process.env.BACKEND_DEV_AUTH === 'true') return true;
+  if (process.env.BACKEND_DEV_AUTH === 'false') return false;
+  // Auto-on in non-production when Supabase isn't configured.
+  return process.env.NODE_ENV !== 'production' && !process.env.SUPABASE_URL && !process.env.VITE_SUPABASE_URL;
+}
 
 async function authenticateToken(req, res, next) {
+  // ── Dev bypass ───────────────────────────────────────────────────────────
+  if (devAuthEnabled()) {
+    req.user = DEV_USER;
+    req.db = getPool();
+    return next();
+  }
+
+  // ── Supabase JWT mode ────────────────────────────────────────────────────
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -42,6 +81,7 @@ async function authenticateToken(req, res, next) {
     };
 
     req.supabase = makeUserClient(token);
+    req.db = getPool();
 
     next();
   } catch (err) {
