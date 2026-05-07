@@ -1,82 +1,23 @@
-/**
- * Admin Service - Handles admin operations via Express API
- * This abstraction allows swapping the backend later
- */
-
-import { supabase } from '../supabase';
-import { API_BASE_URL as API_URL } from '../apiBase';
-
-// Get Supabase access token for authenticated API calls
-const getAccessToken = async (): Promise<string | null> => {
-    const { data: { session } } = await supabase.auth.getSession();
-    return session?.access_token || null;
-};
+// Admin service — backend admin endpoints are stubbed (501) until a new
+// auth provider is wired in. The shape is preserved so callsites compile;
+// each call rejects with an "auth provider not configured" error at runtime.
 
 export interface Customer {
-    id: string;
-    email: string;
-    name: string;
-    role: string;
-    created_at: string;
-    last_sign_in?: string;
-    provider?: string;
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  created_at: string;
+  last_sign_in?: string;
+  provider?: string;
 }
 
+const NOT_IMPLEMENTED = () =>
+  Promise.reject(new Error('Admin endpoints need a new auth provider; see backend/routes/backoffice.js'));
+
+// Variadic signatures so legacy callsites compile; rejection happens at call time.
 export const adminService = {
-    /**
-     * Create a new customer/user
-     */
-    createUser: async (email: string, name?: string, role?: string): Promise<Customer> => {
-        const token = await getAccessToken();
-        if (!token) throw new Error('Not authenticated');
-
-        const response = await fetch(`${API_URL}/api/admin/customers`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ email, name, role })
-        });
-
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Failed to create user');
-        return data;
-    },
-
-    /**
-     * List all customers/users
-     */
-    listUsers: async (): Promise<Customer[]> => {
-        const token = await getAccessToken();
-        if (!token) throw new Error('Not authenticated');
-
-        const response = await fetch(`${API_URL}/api/admin/customers`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (!response.ok) {
-            const data = await response.json().catch(() => ({}));
-            throw new Error(data.error || 'Failed to fetch users');
-        }
-        return response.json();
-    },
-
-    /**
-     * Delete a customer/user
-     */
-    deleteUser: async (id: string): Promise<void> => {
-        const token = await getAccessToken();
-        if (!token) throw new Error('Not authenticated');
-
-        const response = await fetch(`${API_URL}/api/admin/customers/${id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (!response.ok) {
-            const data = await response.json().catch(() => ({}));
-            throw new Error(data.error || 'Failed to delete user');
-        }
-    }
+  createUser: (..._args: unknown[]): Promise<Customer> => NOT_IMPLEMENTED(),
+  listUsers: (..._args: unknown[]): Promise<Customer[]> => NOT_IMPLEMENTED(),
+  deleteUser: (..._args: unknown[]): Promise<void> => NOT_IMPLEMENTED(),
 };

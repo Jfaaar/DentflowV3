@@ -4,7 +4,8 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Topbar } from '../../components/layout/Topbar';
 import { UserPlus, Trash2, Mail, Calendar, Shield, Loader2 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+// Stubbed post-Supabase: reads the demo session token from localStorage.
+// Rewire when the new auth provider lands.
 import { API_BASE_URL as API_URL } from '../../lib/apiBase';
 
 interface Customer {
@@ -28,8 +29,11 @@ export const CustomersPage: React.FC = () => {
     const [role, setRole] = useState<'doctor' | 'assistant'>('doctor');
 
     const getAccessToken = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        return session?.access_token || null;
+        try {
+            return localStorage.getItem('dentflow_access_token');
+        } catch {
+            return null;
+        }
     };
 
     const fetchCustomers = async () => {

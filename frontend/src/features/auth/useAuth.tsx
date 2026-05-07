@@ -1,10 +1,19 @@
+// useAuth — local-only session.
+//
+// Supabase has been removed. Until a real auth provider is wired up, the
+// frontend uses a deterministic demo session: any login() with credentials
+// "demo" / "demo" succeeds with a synthesized clinic_admin user. Other
+// inputs report a generic failure.
+//
+// The Redux auth slice (features/auth/store/authSlice.ts) is the source of
+// truth for downstream consumers; this hook is a thin wrapper that also
+// keeps a localStorage mirror so reloads survive.
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '../../lib/supabase';
 import { useAppDispatch } from '@/store/hooks';
 import { setUser as setReduxUser, logout as reduxLogout, AuthUser } from './store/authSlice';
 import { setStoredToken, clearStoredToken } from '@/shared/storage/authStorage';
 
-// User type matching the app's expectations
 interface User {
   id: string;
   email: string;
@@ -12,6 +21,8 @@ interface User {
   role: 'super_admin' | 'clinic_admin' | 'doctor' | 'assistant';
   clinicId?: string;
   avatar?: string;
+  phone?: string;
+  needsProfileSetup?: boolean;
 }
 
 interface AuthState {
@@ -42,43 +53,50 @@ interface AuthContextType extends AuthState {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Fetch user profile from Supabase profiles table
-const fetchUserProfile = async (userId: string): Promise<User | null> => {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .single();
+const USER_KEY = 'dentflow_user';
 
-  if (error || !data) {
-    console.error('Failed to fetch profile:', error);
+const DEMO_USER: User = {
+  id: '00000000-0000-0000-0000-000000000001',
+  email: 'demo@dentflow.local',
+  name: 'Demo User',
+  role: 'clinic_admin',
+  clinicId: '00000000-0000-0000-0000-0000000000c1',
+};
+
+function readPersistedUser(): User | null {
+  try {
+    const raw = localStorage.getItem(USER_KEY);
+    return raw ? (JSON.parse(raw) as User) : null;
+  } catch {
     return null;
   }
+}
 
-  // Get the auth user for email
-  const { data: { user: authUser } } = await supabase.auth.getUser();
-
-  return {
-    id: data.id,
-    email: authUser?.email || '',
-    name: data.name || authUser?.email || 'User',
-    role: data.role || 'assistant',
-    clinicId: data.clinic_id,
-    avatar: data.avatar,
-  };
-};
+function persistUser(user: User | null): void {
+  try {
+    if (user) {
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(USER_KEY);
+    }
+  } catch {
+    /* localStorage unavailable */
+  }
+}
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const dispatch = useAppDispatch();
-  const [state, setState] = useState<AuthState>({
-    user: null,
-    isAuthenticated: false,
-    isLoading: true, // Start loading to check session
-    error: null,
+  const [state, setState] = useState<AuthState>(() => {
+    const user = readPersistedUser();
+    return {
+      user,
+      isAuthenticated: !!user,
+      isLoading: false,
+      error: null,
+    };
   });
 
-  // Mirror local context state into Redux + localStorage for the new RTK Query
-  // baseApi to read. Fully retired in Phase 4 when consumers move off context.
+  // Mirror local state into Redux.
   useEffect(() => {
     if (state.user) {
       dispatch(setReduxUser(state.user as AuthUser));
@@ -87,163 +105,45 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [state.user, state.isLoading, dispatch]);
 
-  // Mirror Supabase access token into localStorage so baseApi.prepareHeaders
-  // can attach it synchronously to outgoing requests.
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.access_token) {
-        setStoredToken(session.access_token);
-      } else {
-        clearStoredToken();
-      }
-    });
-    return () => { subscription.unsubscribe(); };
-  }, []);
-
-  // Check session on mount and listen for auth changes
-  useEffect(() => {
-    // Get initial session
-    const initSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (session?.user) {
-        const profile = await fetchUserProfile(session.user.id);
-        setState({
-          user: profile,
-          isAuthenticated: !!profile,
-          isLoading: false,
-          error: null,
-        });
-      } else {
-        setState(prev => ({ ...prev, isLoading: false }));
-      }
-    };
-
-    initSession();
-
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        const profile = await fetchUserProfile(session.user.id);
-        setState({
-          user: profile,
-          isAuthenticated: !!profile,
-          isLoading: false,
-          error: null,
-        });
-      } else if (event === 'SIGNED_OUT') {
-        setState({
-          user: null,
-          isAuthenticated: false,
-          isLoading: false,
-          error: null,
-        });
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
   const login = async (credentials: LoginCredentials) => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
+    setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
-    // Frontend-only demo bypass. Backend wiring comes later.
     if (credentials.email === 'demo' && credentials.password === 'demo') {
-      const demoUser: User = {
-        id: 'demo-user',
-        email: 'demo@dentflow.local',
-        name: 'Demo User',
-        role: 'clinic_admin',
-        clinicId: 'demo-clinic',
-      };
-      setState({ user: demoUser, isAuthenticated: true, isLoading: false, error: null });
+      // Frontend-only demo session. The backend's dev-bypass auth
+      // middleware accepts any request from this user, so the wire is
+      // real even though we don't mint a JWT here.
+      persistUser(DEMO_USER);
+      setStoredToken('demo-session-token');
+      setState({ user: DEMO_USER, isAuthenticated: true, isLoading: false, error: null });
       return;
     }
 
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: credentials.email,
-        password: credentials.password,
-      });
-
-      if (error) throw error;
-
-      if (data.user) {
-        const profile = await fetchUserProfile(data.user.id);
-        setState({
-          user: profile,
-          isAuthenticated: !!profile,
-          isLoading: false,
-          error: null,
-        });
-      }
-    } catch (err: any) {
-      const errorMessage = err.message || 'Login failed';
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage,
-      }));
-    }
-  };
-
-  const register = async (credentials: RegisterCredentials) => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
-
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email: credentials.email,
-        password: credentials.password,
-        options: {
-          data: {
-            name: credentials.name,
-            role: credentials.role || 'assistant',
-          },
-        },
-      });
-
-      if (error) throw error;
-
-      if (data.user) {
-        // Profile is created via database trigger
-        // Wait a moment for trigger to complete
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        const profile = await fetchUserProfile(data.user.id);
-        setState({
-          user: profile,
-          isAuthenticated: !!profile,
-          isLoading: false,
-          error: null,
-        });
-      }
-    } catch (err: any) {
-      const errorMessage = err.message || 'Registration failed';
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage,
-      }));
-      throw err;
-    }
-  };
-
-  const logout = async () => {
-    await supabase.auth.signOut();
     setState({
       user: null,
       isAuthenticated: false,
       isLoading: false,
-      error: null,
+      error: 'Login failed. Use demo / demo while the auth provider is being wired.',
     });
   };
 
-  // Handle phone auth users (Firebase-based)
+  const register = async (_credentials: RegisterCredentials) => {
+    setState({
+      user: null,
+      isAuthenticated: false,
+      isLoading: false,
+      error: 'Registration is disabled until an auth provider is wired in.',
+    });
+  };
+
+  const logout = async () => {
+    persistUser(null);
+    clearStoredToken();
+    setState({ user: null, isAuthenticated: false, isLoading: false, error: null });
+  };
+
+  // Legacy API kept to avoid churn in callers; phone-OTP no longer wires up.
   const setPhoneUser = (userId: string, phone: string, needsSetup: boolean) => {
     if (needsSetup) {
-      // User needs to complete registration - store phone for later
       setState({
         user: {
           id: userId,
@@ -252,21 +152,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           role: 'assistant',
           phone,
           needsProfileSetup: true,
-        } as User & { phone: string; needsProfileSetup: boolean },
+        },
         isAuthenticated: true,
         isLoading: false,
         error: null,
       });
     } else {
-      // User has a profile - fetch it
-      fetchUserProfile(userId).then(profile => {
-        setState({
-          user: profile,
-          isAuthenticated: !!profile,
-          isLoading: false,
-          error: null,
-        });
-      });
+      setState((prev) => ({ ...prev, error: 'Phone auth is disabled.' }));
     }
   };
 

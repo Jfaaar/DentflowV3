@@ -35,8 +35,8 @@ export const ClinicDetailsPage: React.FC<Props> = ({ clinicId, onBack }) => {
     const loadData = async () => {
         setIsLoading(true);
         try {
-            const allClinics = await api.backoffice.listClinics();
-            const found = allClinics.find(c => c.id === clinicId);
+            const allClinics = (await api.backoffice.listClinics()) as Clinic[];
+            const found = allClinics.find((c: Clinic) => c.id === clinicId);
             setClinic(found || null);
 
             const staff = await api.backoffice.getClinicUsers(clinicId);

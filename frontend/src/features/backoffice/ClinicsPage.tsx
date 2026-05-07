@@ -4,7 +4,10 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Topbar } from '../../components/layout/Topbar';
 import { Building2, Plus, MapPin, Phone, Mail, Calendar, Loader2, Users } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+// Backoffice pages currently rely on auth-provider-dependent endpoints
+// that are stubbed (501) post-Supabase. Helper kept as a placeholder that
+// reads the demo session token from localStorage; rewire when the new
+// auth provider lands.
 import { API_BASE_URL as API_URL } from '../../lib/apiBase';
 
 interface Clinic {
@@ -32,8 +35,11 @@ export const ClinicsPage: React.FC = () => {
     const [adminName, setAdminName] = useState('');
 
     const getAccessToken = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        return session?.access_token || null;
+        try {
+            return localStorage.getItem('dentflow_access_token');
+        } catch {
+            return null;
+        }
     };
 
     const fetchClinics = async () => {

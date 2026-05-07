@@ -1,68 +1,52 @@
-/**
- * Auth Service - Unified authentication interface
- * Combines Email (Supabase) and Phone (Firebase) authentication
- */
+// Auth service — Supabase removed. The frontend now uses a localStorage-only
+// demo session (see features/auth/useAuth.tsx). When you wire a real auth
+// provider, replace this module.
 
-import { supabase } from '../supabase';
-import { emailAuthProvider } from './emailAuth';
-import { phoneAuthProvider } from './phoneAuth';
-import { AuthService, AppUser } from './authTypes';
+export interface AppUser {
+  id: string;
+  email?: string;
+  phone?: string;
+  name: string;
+  role: 'super_admin' | 'clinic_admin' | 'doctor' | 'assistant';
+  clinicId?: string;
+  avatar?: string;
+}
 
-export type { AppUser };
+const TOKEN_KEY = 'dentflow_access_token';
+const USER_KEY = 'dentflow_user';
 
-export const authService: AuthService = {
-    email: emailAuthProvider,
-    phone: phoneAuthProvider,
+function readUser(): AppUser | null {
+  try {
+    const raw = localStorage.getItem(USER_KEY);
+    return raw ? (JSON.parse(raw) as AppUser) : null;
+  } catch {
+    return null;
+  }
+}
 
-    /**
-     * Get current session
-     */
-    async getSession() {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) throw error;
-        return session;
-    },
+export const authService = {
+  async getSession(): Promise<{ access_token: string; user: AppUser } | null> {
+    const token = localStorage.getItem(TOKEN_KEY);
+    const user = readUser();
+    if (!token || !user) return null;
+    return { access_token: token, user };
+  },
 
-    /**
-     * Get current user with profile
-     */
-    async getCurrentUser(): Promise<AppUser | null> {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return null;
+  async getCurrentUser(): Promise<AppUser | null> {
+    return readUser();
+  },
 
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('name, role, clinic_id, avatar, phone')
-            .eq('id', user.id)
-            .single();
-
-        return {
-            id: user.id,
-            email: user.email,
-            phone: profile?.phone,
-            name: profile?.name || user.email || 'User',
-            role: profile?.role || 'assistant',
-            clinicId: profile?.clinic_id,
-            avatar: profile?.avatar
-        };
-    },
-
-    /**
-     * Sign out
-     */
-    async signOut() {
-        const { error } = await supabase.auth.signOut();
-        if (error) throw error;
-    },
-
-    /**
-     * Listen for auth state changes
-     */
-    onAuthStateChange(callback: (event: string, session: any) => void) {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(callback);
-        return { unsubscribe: () => subscription.unsubscribe() };
+  async signOut(): Promise<void> {
+    try {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+    } catch {
+      /* localStorage unavailable */
     }
-};
+  },
 
-// Re-export for backward compatibility
-export { emailAuthProvider, phoneAuthProvider };
+  onAuthStateChange(_callback: (event: string, session: unknown) => void) {
+    // No-op until a real auth provider is wired in.
+    return { unsubscribe: () => {} };
+  },
+};
