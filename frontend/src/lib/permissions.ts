@@ -103,12 +103,6 @@ export type Permission =
   | 'backoffice.users.impersonate'
   | 'backoffice.audit.view';
 
-const ALL: Permission[] = [
-  // Just used as a sentinel; super_admin gets everything via wildcard below.
-];
-
-const PATIENT_VIEWER: Permission[] = ['patients.view', 'appointments.view', 'clinical.view'];
-
 const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[] | '*'> = {
   super_admin: '*',
 
@@ -165,8 +159,6 @@ const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[] | '*'> = {
     'settings.view',
   ],
 };
-
-void ALL; // reserve for future "ALL_PERMISSIONS" export.
 
 export const hasPermission = (
   role: UserRole | undefined | null,

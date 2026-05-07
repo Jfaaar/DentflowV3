@@ -6,11 +6,11 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { api } from '../../lib/api';
-import { Appointment, Invoice, Payment } from '../../types';
+import { Invoice, Payment } from '../../types';
 import { formatDate, formatTime, cn } from '../../lib/utils';
-import { 
-  Receipt, Check, Loader2, DollarSign, Coins, Search, 
-  Filter, X, CheckCircle, AlertCircle, PlusCircle, 
+import {
+  Receipt, Check, Loader2, Coins, Search,
+  Filter, X, CheckCircle, AlertCircle, PlusCircle,
   TrendingUp, Wallet, CreditCard, BarChart3,
   CalendarRange, Download, PieChart, Banknote, Landmark
 } from 'lucide-react';
@@ -20,7 +20,7 @@ import { PaymentModal } from './components/PaymentModal';
 export const InvoicesPage: React.FC = () => {
   const { t, language } = useLanguage();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [, setIsLoading] = useState(true);
 
   // Creation State
   const [showCreateModal, setShowCreateModal] = useState(false);

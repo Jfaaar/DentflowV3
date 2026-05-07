@@ -6,7 +6,7 @@ import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { InventoryItem, Prescription, PrescriptionItem } from '../../types';
 import { useLanguage } from '../language/LanguageContext';
-import { Search, Plus, Trash2, Printer, Pill, ChevronRight, AlertCircle, Package } from 'lucide-react';
+import { Search, Plus, Trash2, Printer, Pill, AlertCircle, Package } from 'lucide-react';
 import { api } from '../../lib/api';
 import { cn } from '../../lib/utils';
 

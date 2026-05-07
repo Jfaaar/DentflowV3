@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
-import { UserPlus, User as UserIcon, Shield } from 'lucide-react';
+import { UserPlus, Shield } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useAuth } from '../auth/useAuth';
 

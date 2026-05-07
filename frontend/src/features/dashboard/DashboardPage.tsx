@@ -16,7 +16,7 @@ import { useLanguage } from '../../features/language/LanguageContext';
 import { cn } from '../../lib/utils';
 
 export const DashboardPage: React.FC = () => {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -236,7 +236,7 @@ export const DashboardPage: React.FC = () => {
                                 {/* Vertical Line */}
                                 <div className="absolute left-6 top-4 bottom-4 w-px bg-surface-200 dark:bg-surface-800" />
 
-                                {stats.todayAppts.map((apt, index) => {
+                                {stats.todayAppts.map((apt) => {
                                     const isNext = stats.nextAppt?.id === apt.id;
                                     const isPast = new Date(apt.end) < new Date();
                                     

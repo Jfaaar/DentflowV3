@@ -19,7 +19,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
   onSubmit,
   initialData
 }) => {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   
   // Basic Info
   const [name, setName] = useState('');

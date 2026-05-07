@@ -33,11 +33,6 @@ const getToothType = (id: number) => {
   return 'molar'; 
 };
 
-const isAnterior = (id: number) => {
-    const n = id % 10;
-    return n >= 1 && n <= 3;
-};
-
 // --- SVG COMPONENTS ---
 
 // 1. ANATOMICAL VIEW (Realistic)

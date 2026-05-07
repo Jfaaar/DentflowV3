@@ -14,7 +14,7 @@ interface Props {
 export const ClinicDetailsPage: React.FC<Props> = ({ clinicId, onBack }) => {
     const [clinic, setClinic] = useState<Clinic | null>(null);
     const [users, setUsers] = useState<User[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [, setIsLoading] = useState(false);
 
     // Modals
     const [resetPassUser, setResetPassUser] = useState<User | null>(null);

@@ -7,11 +7,11 @@ import { Input } from '../../../components/ui/Input';
 import { Modal } from '../../../components/ui/Modal';
 import { formatDate, formatTime, cn } from '../../../lib/utils';
 import {
-  ArrowLeft, Phone, Mail, Calendar, Clock, FileText, Receipt,
+  ArrowLeft, Phone, Mail, Calendar, Clock, Receipt,
   Image as ImageIcon, Activity, AlertCircle, MoreVertical,
   Plus, Archive, Stethoscope, Coins,
-  CheckCircle, MessageCircle, Trash2, Undo2, Loader2, Search, Pencil, Filter, User,
-  CreditCard, Printer, DollarSign, Download, ArrowUpRight, PlusCircle, Check, Pill,
+  CheckCircle, MessageCircle, Trash2, Undo2, Loader2, Search, Pencil,
+  CreditCard, Printer, PlusCircle, Check, Pill,
   FolderOpen
 } from 'lucide-react';
 import { useLanguage } from '../../language/LanguageContext';

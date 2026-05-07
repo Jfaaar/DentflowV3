@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../../lib/supabase';
-import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { useAppDispatch } from '@/store/hooks';
 import { setUser as setReduxUser, logout as reduxLogout, AuthUser } from './store/authSlice';
 import { setStoredToken, clearStoredToken } from '@/shared/storage/authStorage';

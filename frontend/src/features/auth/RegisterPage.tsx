@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
-import { Activity, AlertCircle, UserPlus, ArrowLeft } from 'lucide-react';
+import { AlertCircle, UserPlus, ArrowLeft } from 'lucide-react';
 import { useAuth } from './useAuth';
-import { useLanguage } from '../language/LanguageContext';
 
 interface RegisterPageProps {
     onBackToLogin: () => void;
@@ -12,7 +11,6 @@ interface RegisterPageProps {
 
 export const RegisterPage: React.FC<RegisterPageProps> = ({ onBackToLogin }) => {
     const { register, isLoading } = useAuth();
-    const { t } = useLanguage();
 
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');

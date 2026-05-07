@@ -6,7 +6,7 @@ import { Input } from '../../../components/ui/Input';
 import { Button } from '../../../components/ui/Button';
 import { InventoryItem, InventoryItemType, Supplier } from '../../../types';
 import { useLanguage } from '../../language/LanguageContext';
-import { FileText, Calendar, Tag, Truck, Box, Settings, Wrench, DollarSign, Layers } from 'lucide-react';
+import { FileText, Calendar, Tag, Truck, Box, Settings, Wrench, DollarSign } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { api } from '../../../lib/api';
 

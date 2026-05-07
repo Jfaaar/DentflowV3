@@ -6,7 +6,7 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { api } from '../../lib/api';
 import { InventoryItem, InventoryItemType } from '../../types';
-import { Search, Package, Plus, Pencil, Trash2, AlertTriangle, Loader2, Filter, Archive, CalendarOff, ArrowLeftRight, Box, Settings, Wrench, Coins, PackageCheck, AlertOctagon, MoreHorizontal, History, Truck } from 'lucide-react';
+import { Search, Package, Plus, Pencil, Trash2, AlertTriangle, Loader2, Filter, Archive, CalendarOff, ArrowLeftRight, Box, Settings, Wrench, Coins, PackageCheck, AlertOctagon, Truck } from 'lucide-react';
 import { useLanguage } from '../../features/language/LanguageContext';
 import { MedicamentModal } from './components/MedicamentModal';
 import { StockAdjustmentModal } from './components/StockAdjustmentModal';

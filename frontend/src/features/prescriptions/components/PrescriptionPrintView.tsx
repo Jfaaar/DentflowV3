@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { Patient, Prescription } from '../../../types';
 import { formatDate } from '../../../lib/utils';
 import { useLanguage } from '../../language/LanguageContext';
-import { Activity, X } from 'lucide-react';
+import { Activity } from 'lucide-react';
 
 interface PrescriptionPrintViewProps {
   prescription: Prescription;

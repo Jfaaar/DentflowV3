@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { Appointment, AppointmentStatus, Patient } from '../../types';
 import { cn } from '../../lib/utils';
-import { Clock, Calendar as CalendarIcon, User, Phone, Search, X, Lock, FileText, Activity, BookUser, Trash2, AlertTriangle, MessageCircle, CheckCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, User, Phone, Search, X, Lock, FileText, Activity, BookUser, Trash2, AlertTriangle, MessageCircle, CheckCircle } from 'lucide-react';
 import { api } from '../../lib/api';
 import { PatientDirectoryModal } from '../patients/PatientDirectoryModal';
 import { useLanguage } from '../../features/language/LanguageContext';
@@ -115,7 +115,6 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
         const h = initialDate.getHours();
         const m = initialDate.getMinutes();
         if (h >= START_HOUR && h < END_HOUR) {
-            const timeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
             // Adjust to nearest 30 min slot
             const slotMin = m < 30 ? '00' : '30';
             const adjustedTimeStr = `${h.toString().padStart(2, '0')}:${slotMin}`;
@@ -290,16 +289,6 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
     e.stopPropagation();
     const cleanPhone = phone.replace(/[^0-9]/g, '');
     window.open(`https://wa.me/${cleanPhone}`, '_blank');
-  };
-
-  const getStatusColor = (s: AppointmentStatus) => {
-      switch(s) {
-          case 'confirmed': return 'bg-green-100 text-green-700 border-green-200';
-          case 'pending': return 'bg-orange-100 text-orange-700 border-orange-200';
-          case 'canceled': return 'bg-red-100 text-red-700 border-red-200';
-          case 'completed': return 'bg-purple-100 text-purple-700 border-purple-200';
-          default: return 'bg-surface-100 text-surface-700 border-surface-200';
-      }
   };
 
   const statusTheme = useMemo(() => {

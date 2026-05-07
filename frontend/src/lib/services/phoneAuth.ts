@@ -86,7 +86,7 @@ export const phoneAuthProvider: PhoneAuthProvider = {
     /**
      * Verify OTP code
      */
-    async verifyOTP(verificationId: string, code: string): Promise<AuthResult> {
+    async verifyOTP(_verificationId: string, code: string): Promise<AuthResult> {
         if (!confirmationResult) {
             return { success: false, error: 'No verification in progress' };
         }
@@ -100,7 +100,7 @@ export const phoneAuthProvider: PhoneAuthProvider = {
             }
 
             // Get Firebase ID token to verify on backend
-            const idToken = await firebaseUser.getIdToken();
+            await firebaseUser.getIdToken();
 
             // Link with Supabase - create/update profile
             // We'll use a custom approach: sign in anonymously or with a service role

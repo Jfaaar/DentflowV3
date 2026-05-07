@@ -5,9 +5,8 @@ import { Input } from '../../../components/ui/Input';
 import { Button } from '../../../components/ui/Button';
 import { Treatment, InventoryItem, ConsumedMaterial } from '../../../types';
 import { useLanguage } from '../../../features/language/LanguageContext';
-import { DollarSign, Package, Plus, Trash2, Search } from 'lucide-react';
+import { Package, Plus, Trash2, Search } from 'lucide-react';
 import { api } from '../../../lib/api';
-import { cn } from '../../../lib/utils';
 
 interface TreatmentFormModalProps {
   isOpen: boolean;
