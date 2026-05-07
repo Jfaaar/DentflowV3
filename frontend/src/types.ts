@@ -192,8 +192,8 @@ export interface DaySummary {
   appointments: Appointment[];
 }
 
-// ─── Phase 2 additions (Supabase migration) ────────────────────────────────
-// New entities backing the clinical tables defined in supabase/migrations/0002.
+// ─── Clinical entities ─────────────────────────────────────────────────────
+// Backed by the tables defined in backend/db/migrations/0002_clinical_tables.sql.
 
 export type PatientStatus = 'active' | 'archived' | 'deceased' | 'transferred';
 

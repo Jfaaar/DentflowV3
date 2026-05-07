@@ -6,7 +6,7 @@ Multi-tenant clinic management SaaS — patients, scheduling, clinical records, 
 
 - **Frontend**: React 18 + TypeScript + Vite + Tailwind, Redux Toolkit + RTK Query, react-router-dom v6, i18next.
 - **Backend**: Express, layered controllers / services / repositories, zod validation, JWT auth.
-- **Database**: Postgres (local Docker stack) or Supabase (production). Both run the same migrations under [backend/supabase/migrations](backend/supabase/migrations/).
+- **Database**: Postgres 16 (local Docker stack). Schema lives in [backend/db/migrations/](backend/db/migrations/) and is applied automatically on first container start.
 - **Tooling**: Vitest + Testing Library + MSW (unit), Playwright (e2e), strict TS.
 
 Repo is an **npm workspace** — frontend at [frontend/](frontend/), backend at [backend/](backend/).
@@ -27,7 +27,7 @@ cp frontend/.env.example frontend/.env.local
 docker compose up -d
 ```
 
-The Postgres container auto-runs the migration files under [backend/supabase/migrations/](backend/supabase/migrations/) (and seeds a dev clinic + sample patients) on the first start. To reset everything to a virgin schema:
+The Postgres container auto-runs the migration files under [backend/db/migrations/](backend/db/migrations/) (and seeds a dev clinic + sample patients via [backend/db/init/](backend/db/init/)) on the first start. To reset everything to a virgin schema:
 
 ```bash
 docker compose down -v   # drops the named volumes
