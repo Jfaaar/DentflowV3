@@ -140,9 +140,8 @@ const ClinicDetailsRoute: React.FC = () => {
 
 const LoginRoute: React.FC = () => {
   const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
   if (isAuthenticated) return <Navigate to={ROUTES.root} replace />;
-  return <LoginPage onRegisterClick={() => navigate(ROUTES.auth.register)} />;
+  return <LoginPage />;
 };
 
 const RegisterRoute: React.FC = () => {

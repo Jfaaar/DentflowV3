@@ -149,6 +149,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const login = async (credentials: LoginCredentials) => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
+    // Frontend-only demo bypass. Backend wiring comes later.
+    if (credentials.email === 'demo' && credentials.password === 'demo') {
+      const demoUser: User = {
+        id: 'demo-user',
+        email: 'demo@dentflow.local',
+        name: 'Demo User',
+        role: 'clinic_admin',
+        clinicId: 'demo-clinic',
+      };
+      setState({ user: demoUser, isAuthenticated: true, isLoading: false, error: null });
+      return;
+    }
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: credentials.email,
