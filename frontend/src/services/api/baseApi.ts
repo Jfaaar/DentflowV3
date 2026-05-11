@@ -53,6 +53,13 @@ export const baseApi = createApi({
     'Document',
     'Settings',
     'Stats',
+    'Feature',
+    'RolePermissions',
+    'PerioChart',
+    'EndoRecord',
+    'OrthoEpisode',
+    'OrthoVisit',
+    'DentalLabCase',
   ],
   endpoints: () => ({}),
 });
