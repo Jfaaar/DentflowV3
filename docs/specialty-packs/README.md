@@ -36,7 +36,7 @@ Legend: `planned` · `in progress` · `review` · `done`
 | Phase | Theme | Status | Pack docs |
 |---|---|---|---|
 | 0 | Foundations & cleanup (core keys, `SPECIALTY_PROFILES` scaffolding) | `done` (consumer rewires of `recordTabs` / `dashboardPreset` / `appointmentTypes` correctly carry into each pack's phase) | [00-phase-0-foundations](packs/00-phase-0-foundations.md) |
-| 1 | Dental pack | `planned` | [01-dental](packs/01-dental.md) |
+| 1 | Dental pack | `in progress` | [01-dental](packs/01-dental.md) |
 | 2 | Pediatrics pack | `planned` | [02-pediatrics](packs/02-pediatrics.md) |
 | 3 | Dermatology pack | `planned` | [03-dermatology](packs/03-dermatology.md) |
 | 4 | Cardiology / Ophthalmology / ENT / Orthopaedics packs | `planned` | [04-cardiology](packs/04-cardiology.md) · [05-ophthalmology](packs/05-ophthalmology.md) · [06-ent](packs/06-ent.md) · [07-orthopedics](packs/07-orthopedics.md) |
@@ -49,7 +49,7 @@ Legend: `planned` · `in progress` · `review` · `done`
 | Pack | New feature keys | Status | Doc |
 |---|---|---|---|
 | Core / foundations | `clinicalNotes`, `allergies`, `medicationList`, `quotes`(surface), `referrals`, `certificates` + promote `vitals`/`problemList` to all | `done` (DB seed + mirrors + catalog test + `SPECIALTY_PROFILES` + `useClinicSpecialty` + seeder hook + `isDental` migration; profile-driven consumer rewires carry into pack phases) | [00](packs/00-phase-0-foundations.md) |
-| Dental | `perioChart`, `endoChart`, `orthoModule` | `planned` | [01](packs/01-dental.md) |
+| Dental | `perioChart`, `endoChart`, `orthoModule` | `in progress` (catalog keys landed in `0013`; tables + backend + UI next) | [01](packs/01-dental.md) |
 | Pediatrics | `growthCharts`, `developmentMilestones`, `newbornScreening` (`vaccinations` already live) | `planned` | [02](packs/02-pediatrics.md) |
 | Dermatology | `dermAtlas`, `skinProcedures`, `cosmeticModule` | `planned` | [03](packs/03-dermatology.md) |
 | Cardiology | `cardiacStudies`, `cardioRiskScores`, `bpTrends`, `anticoagClinic` | `planned` | [04](packs/04-cardiology.md) |
