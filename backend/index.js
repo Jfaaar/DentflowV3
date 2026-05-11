@@ -35,6 +35,7 @@ const suppliersRouter = require('./routes/suppliers');
 const inventoryTransactionsRouter = require('./routes/inventoryTransactions');
 const clinicalRouter = require('./routes/clinical');
 const medicalRouter = require('./routes/medical');
+const dentalRouter = require('./routes/dental');
 const insuranceRouter = require('./routes/insurance');
 const settingsRouter = require('./routes/settings');
 const statsRouter = require('./routes/stats');
@@ -138,6 +139,7 @@ function createApp() {
   app.use('/api/v1/inventory-transactions', inventoryTransactionsRouter);
   app.use('/api/v1/clinical', clinicalRouter);
   app.use('/api/v1/medical', medicalRouter);
+  app.use('/api/v1/dental', dentalRouter);
   app.use('/api/v1/insurance', insuranceRouter);
   app.use('/api/v1/settings', settingsRouter);
   app.use('/api/v1/stats', statsRouter);
