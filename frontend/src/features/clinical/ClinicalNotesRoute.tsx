@@ -18,10 +18,10 @@ interface Props {
 
 export const ClinicalNotesRoute: React.FC<Props> = ({ patientId, patientName, onBack }) => {
   const { t } = useTranslation();
-  const { isDental, isLoading } = useClinicSpecialty();
+  const { has, isLoading } = useClinicSpecialty();
   if (isLoading) return null;
 
-  if (isDental) {
+  if (has('dental')) {
     return <ClinicalNoteEditor patientId={patientId} patientName={patientName} onBack={onBack} />;
   }
 

@@ -30,7 +30,8 @@ export const TreatmentFormModal: React.FC<TreatmentFormModalProps> = ({
   initialSurface
 }) => {
   const { t } = useLanguage();
-  const { isDental } = useClinicSpecialty();
+  const { has } = useClinicSpecialty();
+  const isDental = has('dental');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [tooth, setTooth] = useState('');
   const [surface, setSurface] = useState('');

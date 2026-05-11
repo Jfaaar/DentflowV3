@@ -72,7 +72,8 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
   invoices
 }) => {
   const { t, language } = useLanguage();
-  const { isDental, has } = useClinicSpecialty();
+  const { has } = useClinicSpecialty();
+  const isDental = has('dental');
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   
   // Global Patient Search State

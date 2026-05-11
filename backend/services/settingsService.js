@@ -1,5 +1,6 @@
 const repo = require('../repositories/settingsRepository');
 const { ApiError } = require('../middleware/errorHandler');
+const { seedSpecialtyDefaults } = require('./specialtyDefaultsSeeder');
 
 function requireClinic(req) {
   if (!req.user?.clinicId) {
@@ -15,8 +16,25 @@ async function getSettings(req) {
   return settings;
 }
 
-function updateSettings(req, patch) {
-  return repo.upsert(req.db, requireClinic(req), patch);
+async function updateSettings(req, patch) {
+  const clinicId = requireClinic(req);
+
+  // Detect specialties added on this update so we can lazily seed each pack's
+  // clinic-scoped defaults (appointment types, document kinds, certificate /
+  // referral templates) the first time a clinic enables one. Never act on
+  // shrink — keep historical data; just stop surfacing it via feature gates.
+  const before = await repo.get(req.db, clinicId);
+  const updated = await repo.upsert(req.db, clinicId, patch);
+
+  if (Array.isArray(patch.enabledSpecialties)) {
+    const beforeSet = new Set(before?.enabledSpecialties ?? []);
+    const added = updated.enabledSpecialties.filter((s) => !beforeSet.has(s));
+    if (added.length > 0) {
+      await seedSpecialtyDefaults(req.db, clinicId, added);
+    }
+  }
+
+  return updated;
 }
 
 module.exports = { getSettings, updateSettings };
