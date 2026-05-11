@@ -18,12 +18,19 @@ import { AuthProvider, useAuth } from '../features/auth/useAuth';
 import { LanguageProvider } from '../features/language/LanguageContext';
 import { ThemeProvider } from '../features/theme/ThemeContext';
 import { CalendarPage } from '../features/calendar/CalendarPage';
+import { WaitingRoomPage } from '../features/waitingRoom/WaitingRoomPage';
 import { PatientsPage } from '../features/patients/PatientsPage';
 import { DashboardPage } from '../features/dashboard/DashboardPage';
 import { InvoicesPage } from '../features/invoices/InvoicesPage';
 import { InventoryPage } from '../features/inventory/InventoryPage';
+import { MedicamentsCatalogPage } from '../features/medicaments/MedicamentsCatalogPage';
 import { TeamPage } from '../features/settings/TeamPage';
+import { SettingsOverviewPage } from '../features/settings/SettingsOverviewPage';
+import { ClinicProfilePage } from '../features/settings/ClinicProfilePage';
 import { SpecialtyPage } from '../features/settings/SpecialtyPage';
+import { FeaturesPage } from '../features/settings/FeaturesPage';
+import { RolesPage } from '../features/settings/RolesPage';
+import { SettingsLayout } from '../features/settings/SettingsLayout';
 
 import { ClinicalNotesRoute } from '../features/clinical/ClinicalNotesRoute';
 import { DentalChart } from '../features/clinical/DentalChart';
@@ -155,6 +162,7 @@ const AppRoutes: React.FC = () => (
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="calendar" element={<CalendarPage />} />
+        <Route path="waiting-room" element={<WaitingRoomPage />} />
         <Route path="patients" element={<PatientsPage />} />
         <Route path="patients/:patientId" element={<PatientsPage />} />
 
@@ -164,32 +172,45 @@ const AppRoutes: React.FC = () => (
             element={<PatientScopedRoute Component={ClinicalNotesRoute} />}
           />
         </Route>
-        <Route element={<ProtectedRoute permission="dentalChart.view" />}>
+        <Route element={<ProtectedRoute permission="dentalChart.view" feature="dentalChart" />}>
           <Route
             path="patients/:patientId/dental-chart"
             element={<PatientScopedRoute Component={DentalChart} />}
           />
         </Route>
-        <Route element={<ProtectedRoute permission="insurance.view" />}>
+        <Route element={<ProtectedRoute permission="insurance.view" feature="insurance" />}>
           <Route
             path="patients/:patientId/insurance"
             element={<PatientScopedRoute Component={InsuranceTab} />}
           />
         </Route>
 
-        <Route path="invoices" element={<InvoicesPage />} />
-        <Route path="inventory" element={<InventoryPage />} />
+        <Route element={<ProtectedRoute feature="invoices" />}>
+          <Route path="invoices" element={<InvoicesPage />} />
+        </Route>
+        <Route element={<ProtectedRoute feature="inventory" />}>
+          <Route path="inventory" element={<InventoryPage />} />
+        </Route>
+        <Route element={<ProtectedRoute feature="medicaments" />}>
+          <Route path="medicaments" element={<MedicamentsCatalogPage />} />
+        </Route>
 
-        <Route element={<ProtectedRoute permission="treatments.view" />}>
+        <Route element={<ProtectedRoute permission="treatments.view" feature="treatments" />}>
           <Route path="treatments" element={<TreatmentPlanPage />} />
         </Route>
-        <Route element={<ProtectedRoute permission="prescriptions.view" />}>
+        <Route element={<ProtectedRoute permission="prescriptions.view" feature="prescriptions" />}>
           <Route path="prescriptions" element={<PrescriptionEditor />} />
         </Route>
 
         <Route path="team" element={<TeamPage />} />
-        <Route path="settings" element={<SpecialtyPage />} />
-        <Route path="settings/specialty" element={<SpecialtyPage />} />
+        <Route path="settings" element={<SettingsLayout />}>
+          <Route index element={<Navigate to="overview" replace />} />
+          <Route path="overview" element={<SettingsOverviewPage />} />
+          <Route path="clinic" element={<ClinicProfilePage />} />
+          <Route path="specialty" element={<SpecialtyPage />} />
+          <Route path="features" element={<FeaturesPage />} />
+          <Route path="roles" element={<RolesPage />} />
+        </Route>
       </Route>
     </Route>
 
