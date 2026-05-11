@@ -49,7 +49,7 @@ Legend: `planned` · `in progress` · `review` · `done`
 | Pack | New feature keys | Status | Doc |
 |---|---|---|---|
 | Core / foundations | `clinicalNotes`, `allergies`, `medicationList`, `quotes`(surface), `referrals`, `certificates` + promote `vitals`/`problemList` to all | `done` (DB seed + mirrors + catalog test + `SPECIALTY_PROFILES` + `useClinicSpecialty` + seeder hook + `isDental` migration; profile-driven consumer rewires carry into pack phases) | [00](packs/00-phase-0-foundations.md) |
-| Dental | `perioChart`, `endoChart`, `orthoModule` | `in progress` (catalog keys landed in `0013`; tables + backend + UI next) | [01](packs/01-dental.md) |
+| Dental | `perioChart`, `endoChart`, `orthoModule` | `in progress` — **backend complete** (catalog `0013`, schema `0014`, perio API `277b98c`, endo/ortho/lab API `8477a04`); UI + layout-profile consumers + seed handler still to ship | [01](packs/01-dental.md) |
 | Pediatrics | `growthCharts`, `developmentMilestones`, `newbornScreening` (`vaccinations` already live) | `planned` | [02](packs/02-pediatrics.md) |
 | Dermatology | `dermAtlas`, `skinProcedures`, `cosmeticModule` | `planned` | [03](packs/03-dermatology.md) |
 | Cardiology | `cardiacStudies`, `cardioRiskScores`, `bpTrends`, `anticoagClinic` | `planned` | [04](packs/04-cardiology.md) |

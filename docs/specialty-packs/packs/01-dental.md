@@ -1,4 +1,13 @@
-# Pack: Dental  ·  Phase 1  ·  Status: `planned`
+# Pack: Dental  ·  Phase 1  ·  Status: `in progress — backend done; frontend + layout profile + seed handler pending`
+
+> **Progress (as of this writing):**
+> - 1.A — catalog keys (`perioChart`, `endoChart`, `orthoModule`) → migration `0013_dental_pack_keys.sql`, mirrors updated, catalog test extended. ✅ commit `b570f17`
+> - 1.B — schema → migration `0014_dental_pack_tables.sql`: `perio_charts`, `perio_sites`, `endo_records`, `ortho_episodes`, `ortho_visits`, `dental_lab_cases` (all tenant-scoped, RLS). ✅ commit `e01a221`
+> - 1.C — perio backend → repo/service/controller/validation/routes; `/api/v1/dental/perio` (parent + child sites, replace-semantics bulk upsert); 10-test suite. ✅ commit `277b98c`
+> - 1.D — endo / ortho / lab backend → `/api/v1/dental/{endo, ortho/episodes, ortho/episodes/:id/visits, ortho/visits/:id, lab-cases}`; 18-test suite. ✅ commit `8477a04`
+> - **Remaining:** 1.E perio charting UI · 1.F endo/ortho/lab UI (incl. lab-case board) · 1.G dental layout profile + dashboard preset (wire `SPECIALTY_PROFILES['dental']` consumers) · 1.H treatment-plan tooth/surface UX touch-ups · 1.I `seedSpecialtyDefaults['dental']` handler + dental inventory catalog + Rx/estimate templates · 1.J i18n (FR/EN/AR).
+>
+> Note: the backend slices reference `middleware/featureGuard.js` + the `feature_definitions` table, both bundled in commit `8339b3e` (the pre-existing WIP infra). Order in the log is: `159a7e0` Phase 0 → `b570f17`/`e01a221`/`277b98c` Phase 1.A–C → `8339b3e` WIP infra → `8477a04` Phase 1.D, so the early commits are only fully consistent once `8339b3e` is in the tree.
 
 > "Primary specialty = Dental ⇒ the original Dentflow system." Design context:
 > [`/SPECIALTY_FEATURES.md`](../../../SPECIALTY_FEATURES.md) §4.2. Recipe: [`../CONVENTIONS.md`](../CONVENTIONS.md). `dentalChart` is already live — this pack completes the dental workflow.

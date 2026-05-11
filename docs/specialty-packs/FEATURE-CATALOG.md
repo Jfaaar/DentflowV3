@@ -54,9 +54,9 @@ Columns:
 | Key | Cat | default_permission | Status | Phase | Pack doc |
 |---|---|---|---|---|---|
 | `dentalChart` | clinical | `dentalChart.view` | live | — | [01](packs/01-dental.md) |
-| `perioChart` | clinical | `dentalChart.view` | live (`0013`; tables + UI pending) | 1 | [01](packs/01-dental.md) |
-| `endoChart` | clinical | `clinical.view` | live (`0013`; tables + UI pending) | 1 | [01](packs/01-dental.md) |
-| `orthoModule` | clinical | `clinical.view` | live (`0013`; tables + UI pending) | 1 | [01](packs/01-dental.md) |
+| `perioChart` | clinical | `dentalChart.view` | live (`0013`+`0014`; backend `0277b98c`; UI pending) | 1 | [01](packs/01-dental.md) |
+| `endoChart` | clinical | `clinical.view` | live (`0013`+`0014`; backend `8477a04`; UI pending) | 1 | [01](packs/01-dental.md) |
+| `orthoModule` | clinical | `clinical.view` | live (`0013`+`0014`; backend `8477a04`; UI pending) | 1 | [01](packs/01-dental.md) |
 
 ## C. Pediatrics pack — `default_specialties = ['pediatrics']` (`vaccinations` = `['general_practice','pediatrics']`)
 
