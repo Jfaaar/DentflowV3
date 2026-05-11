@@ -37,6 +37,7 @@ import { DentalChart } from '../features/clinical/DentalChart';
 import { DentalLabCasesPage } from '../features/dental/DentalLabCasesPage';
 import { PerioChartPage } from '../features/dental/PerioChartPage';
 import { EndoRecordsPage } from '../features/dental/EndoRecordsPage';
+import { OrthoModulePage } from '../features/dental/OrthoModulePage';
 import { TreatmentPlanPage } from '../features/treatments/TreatmentPlanPage';
 import { InsuranceTab } from '../features/insurance/InsuranceTab';
 import { PrescriptionEditor } from '../features/prescriptions/PrescriptionEditor';
@@ -192,6 +193,12 @@ const AppRoutes: React.FC = () => (
           <Route
             path="patients/:patientId/endo"
             element={<PatientScopedRoute Component={EndoRecordsPage} />}
+          />
+        </Route>
+        <Route element={<ProtectedRoute permission="clinical.view" feature="orthoModule" />}>
+          <Route
+            path="patients/:patientId/ortho"
+            element={<PatientScopedRoute Component={OrthoModulePage} />}
           />
         </Route>
         <Route element={<ProtectedRoute permission="insurance.view" feature="insurance" />}>
