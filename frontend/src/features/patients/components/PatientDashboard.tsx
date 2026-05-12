@@ -765,12 +765,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                     {/* Anatomical chart — dental clinics see the odontogram, others get the body chart. */}
                     {isDental ? (
                         <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-200 dark:border-surface-700 p-6 shadow-sm">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="font-bold text-lg text-surface-900 dark:text-white">{t('dentalChartTitle')}</h3>
-                                <div className="text-xs text-surface-500">
-                                    {t('toggleViewMode')}
-                                </div>
-                            </div>
+                            <h3 className="font-bold text-lg text-surface-900 dark:text-white mb-4">{t('dentalChartTitle')}</h3>
                             <Odontogram
                                 treatments={treatments}
                                 onToothClick={handleToothClick}
