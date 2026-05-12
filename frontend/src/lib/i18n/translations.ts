@@ -528,6 +528,10 @@ export const translations = {
 
     // Dental chart
     dentalChart: 'Dental Chart',
+    labCases: 'Lab cases',
+    perioChart: 'Perio chart',
+    endoRecords: 'Endo records',
+    orthoTracking: 'Ortho tracking',
     dentalChartTitle: 'Dental chart (FDI)',
     upperJaw: 'Upper jaw',
     lowerJaw: 'Lower jaw',

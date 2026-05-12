@@ -13,6 +13,7 @@ import {
   Stethoscope,
   Pill,
   Tablets,
+  FlaskConical,
 } from 'lucide-react';
 import { useAuth } from '../../features/auth/useAuth';
 import { useFeatureAccessApi } from '../../features/settings/useFeatureAccess';
@@ -88,6 +89,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: 'invoices', label: 'invoices', icon: Receipt, feature: 'invoices' },
         { id: 'inventory', label: 'inventory', icon: Package, feature: 'inventory' },
         { id: 'medicaments', label: 'medicaments', icon: Tablets, feature: 'medicaments' },
+        { id: 'dentalLab', label: 'labCases', icon: FlaskConical, feature: 'dentalChart' },
       ],
     },
     {

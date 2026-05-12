@@ -12,8 +12,11 @@ import {
   Plus, Archive, Stethoscope, Coins,
   CheckCircle, MessageCircle, Trash2, Undo2, Loader2, Search, Pencil,
   CreditCard, Printer, PlusCircle, Check, Pill,
-  FolderOpen
+  FolderOpen, Braces
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../../shared/constants/routes';
+import { useFeatureAccessApi } from '../../settings/useFeatureAccess';
 import { useLanguage } from '../../language/LanguageContext';
 import { RadiologyGalleryModal } from './RadiologyGalleryModal';
 import { DocumentsTab } from './DocumentsTab';
@@ -74,6 +77,12 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
   const { t, language } = useLanguage();
   const { has } = useClinicSpecialty();
   const isDental = has('dental');
+  const navigate = useNavigate();
+  const featureApi = useFeatureAccessApi();
+  const perioAccess = featureApi.access('perioChart');
+  const endoAccess = featureApi.access('endoChart');
+  const orthoAccess = featureApi.access('orthoModule');
+  const showDentalLinks = perioAccess.enabled || endoAccess.enabled || orthoAccess.enabled;
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   
   // Global Patient Search State
@@ -472,7 +481,36 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
 
                     {isMenuOpen && (
                         <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-surface-800 rounded-xl shadow-xl border border-surface-200 dark:border-surface-700 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                            <button 
+                            {showDentalLinks && (
+                                <>
+                                    {perioAccess.enabled && perioAccess.can && (
+                                        <button
+                                            onClick={() => { navigate(ROUTES.app.patientPerio(patient.id)); setIsMenuOpen(false); }}
+                                            className="w-full flex items-center gap-2 px-4 py-3 text-sm text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors"
+                                        >
+                                            <Activity size={16}/> {t('perioChart')}
+                                        </button>
+                                    )}
+                                    {endoAccess.enabled && endoAccess.can && (
+                                        <button
+                                            onClick={() => { navigate(ROUTES.app.patientEndo(patient.id)); setIsMenuOpen(false); }}
+                                            className="w-full flex items-center gap-2 px-4 py-3 text-sm text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors"
+                                        >
+                                            <Stethoscope size={16}/> {t('endoRecords')}
+                                        </button>
+                                    )}
+                                    {orthoAccess.enabled && orthoAccess.can && (
+                                        <button
+                                            onClick={() => { navigate(ROUTES.app.patientOrtho(patient.id)); setIsMenuOpen(false); }}
+                                            className="w-full flex items-center gap-2 px-4 py-3 text-sm text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors"
+                                        >
+                                            <Braces size={16}/> {t('orthoTracking')}
+                                        </button>
+                                    )}
+                                    <div className="h-px bg-surface-100 dark:bg-surface-700 my-1" />
+                                </>
+                            )}
+                            <button
                                 onClick={() => { handleToggleStatus(); setIsMenuOpen(false); }}
                                 className="w-full flex items-center gap-2 px-4 py-3 text-sm text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors"
                             >
@@ -480,7 +518,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                                 {patient.status === 'archived' ? t('activatePatient') : t('archivePatient')}
                             </button>
                             <div className="h-px bg-surface-100 dark:bg-surface-700 my-1" />
-                            <button 
+                            <button
                                 onClick={() => { handleDelete(); setIsMenuOpen(false); }}
                                 className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                             >
