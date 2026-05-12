@@ -105,14 +105,44 @@ const ToothNum: React.FC<{ id: number; active: boolean }> = ({ id, active }) => 
   </span>
 );
 
-// ─── Clinical view: the 5-surface tooth box ─────────────────────────────────
-const BOX_PARTS: Record<VisualPart, string> = {
-  center: 'M32,32 L68,32 L68,68 L32,68 Z',
-  top: 'M4,4 L96,4 L68,32 L32,32 Z',
-  bottom: 'M4,96 L96,96 L68,68 L32,68 Z',
-  left: 'M4,4 L32,32 L32,68 L4,96 Z',
-  right: 'M96,4 L68,32 L68,68 L96,96 Z',
+// ─── Clinical view: occlusal-view tooth shape divided into 5 surfaces ───────
+// Each tooth is drawn from above (occlusal view) as an organic rounded outline
+// whose width narrows from molars → incisors, partitioned into the 5 clinical
+// surfaces (centre = occlusal/incisal · top/bottom/left/right = vestibular /
+// palatal-lingual / mesial / distal, mapped per tooth). The 5 path segments
+// tile the outline so there are no gaps; quadratic-curved outer edges give the
+// rounded, tooth-like silhouette.
+type ToothCat = 'molar' | 'premolar' | 'canine' | 'incisor';
+const toothCat = (id: number): ToothCat => {
+  const n = id % 10;
+  if (n <= 2) return 'incisor';
+  if (n === 3) return 'canine';
+  if (n <= 5) return 'premolar';
+  return 'molar';
 };
+
+// Outline footprints — `o*` are the four "corner" points of the silhouette
+// (top-left/right, bottom-left/right) and `bulge*` the mid-edge control points
+// for the quadratic curves. Centre square is fixed at 36..64 for every tooth.
+const SHAPE_GEOM: Record<ToothCat, { x1: number; x2: number; y1: number; y2: number; bx: number; by: number; size: number }> = {
+  //               narrow x edges        narrow y edges     curve bulge       svg px
+  molar:    { x1: 14, x2: 86, y1: 14, y2: 86, bx: 96, by: 96, size: 36 },
+  premolar: { x1: 20, x2: 80, y1: 16, y2: 84, bx: 90, by: 90, size: 33 },
+  canine:   { x1: 28, x2: 72, y1: 14, y2: 86, bx: 84, by: 90, size: 31 },
+  incisor:  { x1: 32, x2: 68, y1: 14, y2: 86, bx: 78, by: 88, size: 29 },
+};
+const C1 = 36, C2 = 64; // centre square bounds
+
+function occlusalParts(cat: ToothCat): Record<VisualPart, string> {
+  const { x1, x2, y1, y2, bx, by } = SHAPE_GEOM[cat];
+  return {
+    center: `M${C1},${C1} L${C2},${C1} L${C2},${C2} L${C1},${C2} Z`,
+    top:    `M${C1},${C1} L${x1},${y1} Q50,${100 - by} ${x2},${y1} L${C2},${C1} Z`,
+    right:  `M${C2},${C1} L${x2},${y1} Q${bx},50 ${x2},${y2} L${C2},${C2} Z`,
+    bottom: `M${C2},${C2} L${x2},${y2} Q50,${by} ${x1},${y2} L${C1},${C2} Z`,
+    left:   `M${C1},${C2} L${x1},${y2} Q${100 - bx},50 ${x1},${y1} L${C1},${C1} Z`,
+  };
+}
 
 const ToothBox: React.FC<{
   id: number;
@@ -124,6 +154,9 @@ const ToothBox: React.FC<{
   const upper = isUpperTooth(id);
   const st = toothStatus(treatments, id);
   const count = treatmentsForTooth(treatments, id).length;
+  const cat = toothCat(id);
+  const parts = occlusalParts(cat);
+  const px = SHAPE_GEOM[cat].size;
   return (
     <div className="flex flex-col items-center gap-1 group select-none">
       {upper && <ToothNum id={id} active={!!st} />}
@@ -131,20 +164,21 @@ const ToothBox: React.FC<{
         type="button"
         onClick={() => onSelect(id)}
         className={cn(
-          'relative rounded-sm transition-transform group-hover:scale-110',
+          'relative rounded-md transition-transform group-hover:scale-110',
           selected && 'ring-2 ring-primary-500 ring-offset-2 ring-offset-white dark:ring-offset-surface-900',
         )}
         title={`#${id}${count ? ` · ${count}` : ''}`}
       >
-        <svg width={34} height={34} viewBox="0 0 100 100" className="overflow-visible drop-shadow-sm">
-          {(Object.keys(BOX_PARTS) as VisualPart[]).map((part) => {
+        <svg width={px} height={px} viewBox="0 0 100 100" className="overflow-visible drop-shadow-sm">
+          {(Object.keys(parts) as VisualPart[]).map((part) => {
             const surf = partToSurface(id, part);
             const status = statusForSurface(treatments, id, surf);
             return (
               <path
                 key={part}
-                d={BOX_PARTS[part]}
-                className={cn(surfaceFill(status), 'stroke-surface-300 dark:stroke-surface-600 stroke-[2] cursor-pointer transition-colors')}
+                d={parts[part]}
+                strokeLinejoin="round"
+                className={cn(surfaceFill(status), 'stroke-surface-300 dark:stroke-surface-600 stroke-[2.5] cursor-pointer transition-colors')}
                 onClick={(e) => { e.stopPropagation(); onSelect(id); onSurface(id, surf); }}
               >
                 <title>{surf}</title>
