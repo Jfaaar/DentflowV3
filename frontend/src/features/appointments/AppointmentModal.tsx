@@ -68,10 +68,10 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
             const foundPatient = patients.find(p => p.id === initialAppointment.patientId);
             if (foundPatient) setSelectedPatient(foundPatient);
             else if (initialAppointment.patientName) {
-                 setSelectedPatient({ id: initialAppointment.patientId, name: initialAppointment.patientName, phone: 'Unknown' });
+                 setSelectedPatient({ id: initialAppointment.patientId, name: initialAppointment.patientName, phone: t('unknown') });
             }
         } else if (initialAppointment.patientName) {
-            setSelectedPatient({ id: initialAppointment.patientId, name: initialAppointment.patientName, phone: 'Loading...' });
+            setSelectedPatient({ id: initialAppointment.patientId, name: initialAppointment.patientName, phone: t('loading') });
         }
 
         setStatus(initialAppointment.status);
@@ -383,7 +383,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
                                     <h4 className="font-bold text-surface-900 dark:text-white text-lg">{selectedPatient.name}</h4>
                                     <div className="flex items-center gap-3 text-sm text-surface-500 dark:text-surface-400">
                                         <span className="flex items-center gap-1"><Phone size={14}/> {selectedPatient.phone}</span>
-                                        <button onClick={(e) => openWhatsApp(e, selectedPatient.phone)} className="text-green-500 hover:text-green-600" title="WhatsApp">
+                                        <button onClick={(e) => openWhatsApp(e, selectedPatient.phone)} className="text-green-500 hover:text-green-600" title={t('whatsapp')}>
                                             <MessageCircle size={16} />
                                         </button>
                                     </div>

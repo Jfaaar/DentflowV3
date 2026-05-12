@@ -1,6 +1,16 @@
 const { z } = require('zod');
 
-const APPOINTMENT_STATUSES = ['pending', 'confirmed', 'in_progress', 'completed', 'canceled', 'no_show'];
+// Mirrors the appointment_status enum in migration 0001.
+const APPOINTMENT_STATUSES = [
+  'pending',
+  'confirmed',
+  'checked_in',
+  'in_progress',
+  'completed',
+  'canceled',
+  'no_show',
+  'rescheduled',
+];
 
 const appointmentCreateSchema = z.object({
   patientId: z.string().min(1),

@@ -70,7 +70,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         onPaymentRecorded();
         onClose();
     } catch (e) {
-        alert("Failed to record payment");
+        alert(t('recordPaymentFailed'));
     } finally {
         setIsSubmitting(false);
     }
@@ -138,17 +138,17 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 
                 <div>
                      <label className="block text-xs font-semibold text-surface-700 dark:text-surface-300 uppercase tracking-wider mb-1.5">
-                        Method
+                        {t('method')}
                     </label>
-                    <select 
+                    <select
                         className="w-full h-10 px-3 rounded-xl border border-surface-300 dark:border-surface-700 bg-white dark:bg-surface-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                         value={method}
                         onChange={e => setMethod(e.target.value as any)}
                     >
-                        <option value="cash">Cash</option>
-                        <option value="card">Card</option>
-                        <option value="check">Check</option>
-                        <option value="transfer">Transfer</option>
+                        <option value="cash">{t('methodCash')}</option>
+                        <option value="card">{t('methodCard')}</option>
+                        <option value="check">{t('methodCheck')}</option>
+                        <option value="transfer">{t('methodTransfer')}</option>
                     </select>
                 </div>
             </div>

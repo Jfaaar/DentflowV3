@@ -219,7 +219,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
           });
           setTreatments(prev => [...prev, newTreatment]);
       } catch (e) {
-          toastError(e, 'Failed to add treatment');
+          toastError(e, t('addTreatmentFailed'));
       }
   };
 
@@ -228,7 +228,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
           const newPrescription = await api.prescriptions.create(data);
           setPrescriptions(prev => [newPrescription, ...prev]);
       } catch (e) {
-          toastError(e, 'Failed to create prescription');
+          toastError(e, t('createPrescriptionFailed'));
       }
   };
 
@@ -239,17 +239,17 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
           if (onPatientUpdate) onPatientUpdate(updated);
           onBack(); // Go back to list to see updated status
       } catch (e) {
-          toastError(e, 'Failed to update status');
+          toastError(e, t('updateStatusFailed'));
       }
   };
 
   const handleDelete = async () => {
-      if (window.confirm("Are you sure you want to delete this patient? This cannot be undone.")) {
+      if (window.confirm(t('deletePatientConfirm'))) {
           try {
               await api.patients.delete(patient.id);
               onBack();
           } catch (e) {
-              toastError(e, 'Failed to delete patient');
+              toastError(e, t('deletePatientFailed'));
           }
       }
   };
@@ -269,7 +269,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
         const result = await api.patients.update(updatedPatient);
         if (onPatientUpdate) onPatientUpdate(result);
     } catch (e) {
-        toastError(e, 'Failed to save notes');
+        toastError(e, t('saveNotesFailed'));
     } finally {
         setIsSavingNotes(false);
     }
@@ -305,7 +305,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
           setShowInvoiceModal(false);
           setNewInvoiceAmount('');
       } catch (e) {
-          toastError(e, 'Failed to create invoice');
+          toastError(e, t('createInvoiceFailed'));
       } finally {
           setIsCreatingInvoice(false);
       }
@@ -314,8 +314,8 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
   const handleMarkAsPaid = async (inv: Invoice) => {
       const remaining = inv.amount - (inv.paidAmount || 0);
       if (remaining <= 0) return;
-      
-      if (!window.confirm(`Mark invoice for ${inv.amount.toFixed(2)} DH as fully paid?`)) return;
+
+      if (!window.confirm(t('markAsPaidConfirm').replace('{amount}', inv.amount.toFixed(2)))) return;
 
       setIsMarkingPaid(inv.id);
       try {
@@ -336,7 +336,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
           await api.invoices.update(updatedInvoice);
           if (onDataUpdate) onDataUpdate();
       } catch (e) {
-          toastError(e, 'Failed to update invoice');
+          toastError(e, t('updateInvoiceFailed'));
       } finally {
           setIsMarkingPaid(null);
       }
@@ -371,8 +371,8 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
     ...(has('general_practice') || !isDental
       ? [
           { id: 'vitals', label: t('vitals'), icon: Heart },
-          { id: 'problems', label: 'Problems', icon: ClipboardList },
-          { id: 'vaccinations', label: 'Vaccinations', icon: Syringe },
+          { id: 'problems', label: t('problems'), icon: ClipboardList },
+          { id: 'vaccinations', label: t('vaccinations'), icon: Syringe },
         ]
       : []),
     { id: 'financials', label: t('billing'), icon: Receipt },
@@ -418,7 +418,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                              {matchedPatients.length > 0 ? (
                                  <div className="py-1">
                                      <div className="px-3 py-2 text-xs font-semibold text-surface-400 uppercase tracking-wider">
-                                         Switch to Patient
+                                         {t('switchToPatient')}
                                      </div>
                                      {matchedPatients.map(p => (
                                          <button
@@ -438,7 +438,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                                  </div>
                              ) : (
                                  <div className="p-4 text-center text-sm text-surface-500">
-                                     No patients found.
+                                     {t('noPatientsFoundShort')}
                                  </div>
                              )}
                         </div>
@@ -477,7 +477,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                                 className="w-full flex items-center gap-2 px-4 py-3 text-sm text-surface-600 dark:text-surface-300 hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors"
                             >
                                 {patient.status === 'archived' ? <Undo2 size={16}/> : <Archive size={16}/>}
-                                {patient.status === 'archived' ? 'Activate Patient' : 'Archive Patient'}
+                                {patient.status === 'archived' ? t('activatePatient') : t('archivePatient')}
                             </button>
                             <div className="h-px bg-surface-100 dark:bg-surface-700 my-1" />
                             <button 
@@ -485,7 +485,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                                 className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                             >
                                 <Trash2 size={16}/>
-                                Delete Patient
+                                {t('deletePatient')}
                             </button>
                         </div>
                     )}
@@ -516,7 +516,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                                 "text-xs px-2 py-0.5 rounded-full font-medium uppercase tracking-wide",
                                 patient.gender === 'male' ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" : "bg-pink-50 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300"
                             )}>
-                                {patient.gender === 'male' ? 'M' : 'F'} {patientAge ? `• ${patientAge} Yrs` : ''}
+                                {patient.gender === 'male' ? 'M' : 'F'} {patientAge ? `• ${patientAge} ${t('yearsAbbrev')}` : ''}
                             </span>
                         )}
                     </h1>
@@ -526,7 +526,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                             <span className="flex items-center gap-1.5 hover:text-primary-600 transition-colors cursor-pointer">
                                 <Phone size={14} /> {patient.phone}
                             </span>
-                            <button onClick={(e) => openWhatsApp(e, patient.phone)} className="text-green-500 hover:text-green-600">
+                            <button onClick={(e) => openWhatsApp(e, patient.phone)} className="text-green-500 hover:text-green-600" title={t('chatOnWhatsapp')}>
                                 <MessageCircle size={14} />
                             </button>
                             {patient.email && (
@@ -542,7 +542,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                                 </span>
                             ) : (
                                 <span className="px-2 py-0.5 rounded bg-surface-100 dark:bg-surface-800 text-surface-400 text-xs font-medium">
-                                    No Insurance
+                                    {t('noInsurance')}
                                 </span>
                             )}
                             {patient.address && <span className="text-xs opacity-75">• {patient.address}</span>}
@@ -566,7 +566,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                 <div>
                     <p className="text-xs text-surface-500 uppercase font-semibold">{t('lastVisit')}</p>
                     <p className="text-sm font-medium text-surface-900 dark:text-white mt-1">
-                        {lastVisit ? formatDate(new Date(lastVisit.start), language) : 'No visit yet'}
+                        {lastVisit ? formatDate(new Date(lastVisit.start), language) : t('noVisitYet')}
                     </p>
                 </div>
             </div>
@@ -616,7 +616,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                                             patient.medicalHistory.allergies.map(a => (
                                                 <span key={a} className="px-2 py-0.5 bg-red-50 text-red-700 text-xs rounded border border-red-100">{a}</span>
                                             ))
-                                        ) : <span className="text-sm text-surface-400 italic">None recorded</span>}
+                                        ) : <span className="text-sm text-surface-400 italic">{t('noneRecorded')}</span>}
                                     </div>
                                 </div>
                                 <div>
@@ -626,7 +626,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                                             patient.medicalHistory.conditions.map(c => (
                                                 <span key={c} className="px-2 py-0.5 bg-orange-50 text-orange-700 text-xs rounded border border-orange-100">{c}</span>
                                             ))
-                                        ) : <span className="text-sm text-surface-400 italic">None recorded</span>}
+                                        ) : <span className="text-sm text-surface-400 italic">{t('noneRecorded')}</span>}
                                     </div>
                                 </div>
                             </div>
@@ -678,13 +678,13 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                             {/* Financial Summary Card */}
                             <Card className="flex flex-col justify-between">
                                 <div className="flex justify-between items-start mb-2">
-                                    <h4 className="font-semibold text-surface-700 dark:text-surface-300">Balance Due</h4>
+                                    <h4 className="font-semibold text-surface-700 dark:text-surface-300">{t('balanceDue')}</h4>
                                     <Coins size={18} className={financialStats.due > 0 ? "text-red-500" : "text-green-500"} />
                                 </div>
                                 <p className={cn("text-2xl font-bold", financialStats.due > 0 ? "text-red-600" : "text-green-600")}>
                                     {financialStats.due.toFixed(2)} <span className="text-sm text-surface-500 font-normal">DH</span>
                                 </p>
-                                <p className="text-xs text-surface-500 mt-1">Total Invoiced: {financialStats.total.toFixed(0)} DH</p>
+                                <p className="text-xs text-surface-500 mt-1">{t('totalInvoicedShort')}: {financialStats.total.toFixed(0)} DH</p>
                             </Card>
                         </div>
 
@@ -692,7 +692,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                         <div>
                             <div className="flex items-center justify-between mb-3">
                                 <h3 className="font-bold text-surface-900 dark:text-white">{t('historyPreview')}</h3>
-                                <Button variant="ghost" size="sm" onClick={() => setActiveTab('appointments')} className="text-primary-600">View All</Button>
+                                <Button variant="ghost" size="sm" onClick={() => setActiveTab('appointments')} className="text-primary-600">{t('viewAll')}</Button>
                             </div>
                             <div className="bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-xl overflow-hidden">
                                 {filteredAppointments.history.slice(0, 3).map((apt, i) => (
@@ -730,7 +730,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="font-bold text-lg text-surface-900 dark:text-white">{t('dentalChartTitle')}</h3>
                                 <div className="text-xs text-surface-500">
-                                    Toggle view mode or click teeth to add treatment
+                                    {t('toggleViewMode')}
                                 </div>
                             </div>
                             <Odontogram
@@ -744,7 +744,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
 
                     <div className="space-y-4">
                         <div className="flex justify-between items-center">
-                            <h3 className="font-bold text-lg text-surface-900 dark:text-white">Treatment History</h3>
+                            <h3 className="font-bold text-lg text-surface-900 dark:text-white">{t('treatmentHistory')}</h3>
                             <Button className="gap-2" onClick={handleOpenTreatmentModal}><Plus size={16}/> {t('addTreatment')}</Button>
                         </div>
                         
@@ -777,7 +777,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                                             </td>
                                         </tr>
                                     )) : (
-                                        <tr><td colSpan={5} className="p-8 text-center text-surface-400 italic">No treatments found</td></tr>
+                                        <tr><td colSpan={5} className="p-8 text-center text-surface-400 italic">{t('noTreatmentsFound')}</td></tr>
                                     )}
                                 </tbody>
                             </table>
@@ -814,7 +814,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                                     <div className="flex gap-4">
                                         <span className="text-surface-500 font-mono text-sm w-24">{formatDate(new Date(apt.start), language)}</span>
                                         <span className={cn("text-sm font-medium", apt.status === 'canceled' ? "text-red-500 line-through" : "text-surface-900 dark:text-white")}>
-                                            Consultation
+                                            {t('consultation')}
                                         </span>
                                     </div>
                                     <span className="text-xs uppercase font-bold text-surface-400">{t(apt.status as any)}</span>
@@ -885,8 +885,8 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                     {/* Header Actions */}
                     <div className="flex justify-between items-center bg-white dark:bg-surface-800 p-4 rounded-xl border border-surface-200 dark:border-surface-700 shadow-sm">
                         <div>
-                            <h2 className="text-lg font-bold text-surface-900 dark:text-white">Billing & Invoices</h2>
-                            <p className="text-sm text-surface-500 dark:text-surface-400">Manage payment records</p>
+                            <h2 className="text-lg font-bold text-surface-900 dark:text-white">{t('billingAndInvoices')}</h2>
+                            <p className="text-sm text-surface-500 dark:text-surface-400">{t('managePaymentRecords')}</p>
                         </div>
                         <Button className="gap-2" onClick={() => setShowInvoiceModal(true)}>
                             <Plus size={18} /> {t('createInvoice')}
@@ -897,7 +897,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                          <Card className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-900/10 border-blue-200 dark:border-blue-800 flex flex-col justify-between">
                              <div className="flex justify-between items-start">
-                                 <p className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase">Total Billed</p>
+                                 <p className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase">{t('totalBilled')}</p>
                                  <div className="p-2 bg-white/50 dark:bg-surface-800/50 rounded-lg text-blue-600"><Receipt size={18}/></div>
                              </div>
                              <p className="text-2xl font-bold text-blue-900 dark:text-blue-100 mt-2">{financialStats.total.toFixed(0)} <span className="text-sm">DH</span></p>
@@ -905,7 +905,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                          
                          <Card className="p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-900/10 border-green-200 dark:border-green-800 flex flex-col justify-between">
                              <div className="flex justify-between items-start">
-                                 <p className="text-xs font-bold text-green-700 dark:text-green-300 uppercase">Amount Paid</p>
+                                 <p className="text-xs font-bold text-green-700 dark:text-green-300 uppercase">{t('amountPaid')}</p>
                                  <div className="p-2 bg-white/50 dark:bg-surface-800/50 rounded-lg text-green-600"><CreditCard size={18}/></div>
                              </div>
                              <p className="text-2xl font-bold text-green-900 dark:text-green-100 mt-2">{financialStats.paid.toFixed(0)} <span className="text-sm">DH</span></p>
@@ -913,7 +913,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
 
                          <Card className="p-4 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-900/10 border-red-200 dark:border-red-800 flex flex-col justify-between">
                              <div className="flex justify-between items-start">
-                                 <p className="text-xs font-bold text-red-700 dark:text-red-300 uppercase">Balance Due</p>
+                                 <p className="text-xs font-bold text-red-700 dark:text-red-300 uppercase">{t('balanceDue')}</p>
                                  <div className="p-2 bg-white/50 dark:bg-surface-800/50 rounded-lg text-red-600"><Coins size={18}/></div>
                              </div>
                              <p className="text-2xl font-bold text-red-900 dark:text-red-100 mt-2">{financialStats.due.toFixed(0)} <span className="text-sm">DH</span></p>
@@ -926,7 +926,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                             className="bg-green-500 h-full transition-all duration-1000 ease-out flex items-center justify-end px-2" 
                             style={{ width: `${Math.max(5, financialStats.progress)}%` }}
                         >
-                            {financialStats.progress > 20 && <span className="text-[10px] font-bold text-white leading-none">{financialStats.progress.toFixed(0)}% Paid</span>}
+                            {financialStats.progress > 20 && <span className="text-[10px] font-bold text-white leading-none">{t('paidPercent').replace('{percent}', financialStats.progress.toFixed(0))}</span>}
                         </div>
                     </div>
 
@@ -934,7 +934,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                     <Card className="overflow-hidden flex flex-col" noPadding>
                          {/* Toolbar */}
                          <div className="p-4 border-b border-surface-100 dark:border-surface-700 flex flex-col sm:flex-row justify-between items-center gap-4 bg-surface-50/50 dark:bg-surface-800/50">
-                            <h3 className="font-bold text-sm text-surface-700 dark:text-surface-300 uppercase tracking-wide">Transactions</h3>
+                            <h3 className="font-bold text-sm text-surface-700 dark:text-surface-300 uppercase tracking-wide">{t('transactions')}</h3>
                             
                             <div className="flex bg-surface-200 dark:bg-surface-700 p-1 rounded-lg">
                                 {(['all', 'paid', 'unpaid', 'partial'] as const).map(filter => (
@@ -960,7 +960,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                                 <thead className="bg-surface-50 dark:bg-surface-800 border-b border-surface-200 dark:border-surface-700">
                                     <tr>
                                         <th className="py-3 px-4 font-semibold text-surface-500">{t('date')}</th>
-                                        <th className="py-3 px-4 font-semibold text-surface-500">Ref #</th>
+                                        <th className="py-3 px-4 font-semibold text-surface-500">{t('refNumber')}</th>
                                         <th className="py-3 px-4 font-semibold text-surface-500">{t('amount')}</th>
                                         <th className="py-3 px-4 font-semibold text-surface-500">{t('paid')}</th>
                                         <th className="py-3 px-4 font-semibold text-surface-500 text-center">{t('status')}</th>
@@ -990,10 +990,10 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                                             </td>
                                             <td className="py-3 px-4 text-right">
                                                 <div className="flex justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                                                    <button 
-                                                        onClick={() => alert("Printing functionality would open here...")}
+                                                    <button
+                                                        onClick={() => alert(t('printingFunctionality'))}
                                                         className="p-1.5 text-surface-400 hover:text-primary-600 hover:bg-surface-100 dark:hover:bg-surface-600 rounded"
-                                                        title="Print Receipt"
+                                                        title={t('printReceipt')}
                                                     >
                                                         <Printer size={16} />
                                                     </button>
@@ -1008,11 +1008,11 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                                                             >
                                                                 {isMarkingPaid === inv.id ? <Loader2 size={12} className="animate-spin" /> : <Check size={12}/>} 
                                                             </Button>
-                                                            <Button 
-                                                                size="sm" 
+                                                            <Button
+                                                                size="sm"
                                                                 className="h-7 text-xs bg-primary-600 hover:bg-primary-700 px-2 shadow-none gap-1"
                                                                 onClick={() => setInvoiceToPay(inv)}
-                                                                title="Add Partial Payment"
+                                                                title={t('addPartialPayment')}
                                                             >
                                                                 <PlusCircle size={12}/>
                                                             </Button>
@@ -1026,7 +1026,7 @@ export const PatientDashboard: React.FC<PatientDashboardProps> = ({
                                             <td colSpan={6} className="p-8 text-center text-surface-400 italic">
                                                 <div className="flex flex-col items-center">
                                                     <Receipt size={32} className="mb-2 opacity-20" />
-                                                    No invoices found matching filter.
+                                                    {t('noInvoicesMatchFilter')}
                                                 </div>
                                             </td>
                                         </tr>

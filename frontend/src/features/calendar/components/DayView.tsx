@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { Appointment } from '../../../types';
 import { cn } from '../../../lib/utils';
 import { isToday } from '../utils/dateUtils';
@@ -24,12 +24,32 @@ export const DayView: React.FC<DayViewProps> = ({ date, appointments, onEditAppo
     const h = d.getHours();
     const m = d.getMinutes();
     if (h < startHour || h > endHour) return null;
-    
+
     // Calculate percentage from top
     const totalMinutes = (endHour - startHour + 1) * 60;
     const minutesFromStart = (h - startHour) * 60 + m;
     return (minutesFromStart / totalMinutes) * 100;
   };
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const firstAppointmentRef = useRef<HTMLDivElement>(null);
+
+  const earliestVisibleId = useMemo(() => {
+    const visible = appointments
+      .filter(a => getPosition(a.start) !== null)
+      .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+    return visible[0]?.id;
+  }, [appointments]);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    const elem = firstAppointmentRef.current;
+    if (!container || !elem) return;
+    const containerRect = container.getBoundingClientRect();
+    const elemRect = elem.getBoundingClientRect();
+    const target = elemRect.top - containerRect.top + container.scrollTop - 24;
+    container.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+  }, [date, earliestVisibleId]);
 
   const getDurationHeight = (start: string, end: string) => {
     const s = new Date(start);
@@ -57,7 +77,7 @@ export const DayView: React.FC<DayViewProps> = ({ date, appointments, onEditAppo
             </div>
         </div>
 
-      <div className="flex-1 relative overflow-y-auto custom-scrollbar bg-white dark:bg-surface-900">
+      <div ref={scrollContainerRef} className="flex-1 relative overflow-y-auto custom-scrollbar bg-white dark:bg-surface-900">
         <div className="absolute inset-0 flex flex-col min-h-[800px]">
           {hours.map(hour => (
             <div key={hour} className="flex-1 border-b border-surface-200 dark:border-surface-800 flex min-h-[60px] group relative">
@@ -104,41 +124,45 @@ export const DayView: React.FC<DayViewProps> = ({ date, appointments, onEditAppo
                 const height = getDurationHeight(apt.start, apt.end);
                 if (top === null) return null;
 
-                const statusStyles = {
+                const statusStyles: Record<string, string> = {
                     confirmed: 'bg-white dark:bg-surface-800 border-l-4 border-green-500 shadow-sm',
                     pending: 'bg-white dark:bg-surface-800 border-l-4 border-orange-500 shadow-sm',
+                    checked_in: 'bg-white dark:bg-surface-800 border-l-4 border-amber-500 shadow-sm',
+                    in_progress: 'bg-white dark:bg-surface-800 border-l-4 border-blue-500 shadow-sm',
                     completed: 'bg-white dark:bg-surface-800 border-l-4 border-purple-500 shadow-sm opacity-80',
-                    canceled: 'bg-surface-50 dark:bg-surface-800 border-l-4 border-surface-300 dark:border-surface-600 opacity-60'
+                    canceled: 'bg-surface-50 dark:bg-surface-800 border-l-4 border-surface-300 dark:border-surface-600 opacity-60',
+                    no_show: 'bg-red-50 dark:bg-red-900/10 border-l-4 border-red-400 opacity-70',
+                    rescheduled: 'bg-white dark:bg-surface-800 border-l-4 border-surface-400 shadow-sm',
                 };
 
                 return (
                     <div
                         key={apt.id}
+                        ref={apt.id === earliestVisibleId ? firstAppointmentRef : null}
                         onClick={(e) => {
                             e.stopPropagation();
                             onEditAppointment(apt);
                         }}
                         style={{ top: `${top}%`, height: `${height}%` }}
                         className={cn(
-                            "absolute inset-x-4 my-0.5 rounded-r-lg border border-surface-200 dark:border-surface-700 p-3 cursor-pointer pointer-events-auto transition-all hover:shadow-md z-20 hover:z-30 flex flex-col justify-center",
+                            "absolute inset-x-4 rounded-r-lg border border-surface-200 dark:border-surface-700 px-3 py-0.5 cursor-pointer pointer-events-auto transition-all hover:shadow-md z-20 hover:z-30 flex flex-col justify-center overflow-hidden",
                             statusStyles[apt.status]
                         )}
                     >
-                        <div className="flex justify-between items-center">
-                             <span className="font-bold text-surface-900 dark:text-white text-sm">{apt.patientName}</span>
+                        <div className="flex justify-between items-center gap-2">
+                             <span className="font-bold text-surface-900 dark:text-white text-sm truncate">{apt.patientName}</span>
                              <div className={cn(
-                                "w-2 h-2 rounded-full",
-                                apt.status === 'confirmed' ? 'bg-green-500' : 
-                                apt.status === 'pending' ? 'bg-orange-500' : 
+                                "w-2 h-2 rounded-full shrink-0",
+                                apt.status === 'confirmed' ? 'bg-green-500' :
+                                apt.status === 'pending' ? 'bg-orange-500' :
                                 apt.status === 'completed' ? 'bg-purple-500' : 'bg-surface-400'
                              )} />
                         </div>
-                        <div className="text-xs text-surface-500 dark:text-surface-400 flex items-center gap-2 mt-0.5">
-                             <span>
-                                {new Date(apt.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false})} - 
-                                {new Date(apt.end).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false})}
+                        <div className="text-xs text-surface-500 dark:text-surface-400 flex items-center gap-2 mt-0.5 min-w-0">
+                             <span className="shrink-0">
+                                {new Date(apt.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false})} - {new Date(apt.end).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false})}
                              </span>
-                             {apt.observation && <span className="truncate max-w-[150px] italic opacity-75">- {apt.observation}</span>}
+                             {apt.observation && <span className="truncate italic opacity-75">- {apt.observation}</span>}
                         </div>
                     </div>
                 );

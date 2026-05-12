@@ -242,7 +242,7 @@ BEGIN
 
   UPDATE invoices
     SET paid_amount = total_paid,
-        status      = new_status,
+        status      = new_status::invoice_status,
         updated_at  = NOW()
     WHERE id = target_invoice;
 

@@ -39,6 +39,11 @@ const dentalRouter = require('./routes/dental');
 const insuranceRouter = require('./routes/insurance');
 const settingsRouter = require('./routes/settings');
 const statsRouter = require('./routes/stats');
+const medicamentsCatalogRouter = require('./routes/medicamentsCatalog');
+const featuresRouter = require('./routes/features');
+
+const { getPool } = require('./db/pg');
+const { bootstrap: bootstrapDb } = require('./db/migrate');
 
 function buildCorsOptions() {
   const raw = process.env.CORS_ORIGINS || '';
@@ -143,6 +148,8 @@ function createApp() {
   app.use('/api/v1/insurance', insuranceRouter);
   app.use('/api/v1/settings', settingsRouter);
   app.use('/api/v1/stats', statsRouter);
+  app.use('/api/v1/medicaments-catalog', medicamentsCatalogRouter);
+  app.use('/api/v1/features', featuresRouter);
 
   // Global structured error handler (unified envelope)
   app.use(errorHandler);
@@ -164,11 +171,19 @@ function createApp() {
 const PORT = process.env.PORT || 3001;
 
 if (require.main === module) {
-  const app = createApp();
-  app.listen(PORT, () => {
-    // eslint-disable-next-line no-console
-    console.log(`Server running on port ${PORT}`);
-  });
+  bootstrapDb(getPool())
+    .catch(err => {
+      // eslint-disable-next-line no-console
+      console.error('[startup] db bootstrap failed:', err);
+      process.exit(1);
+    })
+    .then(() => {
+      const app = createApp();
+      app.listen(PORT, () => {
+        // eslint-disable-next-line no-console
+        console.log(`Server running on port ${PORT}`);
+      });
+    });
 }
 
 module.exports = { createApp };

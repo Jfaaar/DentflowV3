@@ -145,7 +145,7 @@ export const InventoryPage: React.FC = () => {
           fetchInventory();
           setIsModalOpen(false);
       } catch (e) {
-          alert("Failed to save item");
+          alert(t('saveItemFailed'));
       }
   };
 
@@ -154,17 +154,17 @@ export const InventoryPage: React.FC = () => {
           await api.inventory.adjustStock(id, qty, reason);
           fetchInventory();
       } catch (e) {
-          alert("Failed to adjust stock");
+          alert(t('adjustStockFailed'));
       }
   };
 
   const handleDelete = async (id: string) => {
-      if (!window.confirm("Delete this item?")) return;
+      if (!window.confirm(t('deleteItemConfirm'))) return;
       try {
           await api.inventory.delete(id);
           fetchInventory();
       } catch (e) {
-          alert("Failed to delete item");
+          alert(t('deleteItemFailed'));
       }
   };
 
@@ -274,9 +274,9 @@ export const InventoryPage: React.FC = () => {
                             </div>
 
                             <div className="flex items-center gap-2">
-                                <Button 
-                                    variant="secondary" 
-                                    className="gap-2 border border-surface-200 dark:border-surface-700" 
+                                <Button
+                                    variant="secondary"
+                                    className="gap-2 border border-surface-200 dark:border-surface-700"
                                     onClick={() => setIsSuppliersOpen(true)}
                                 >
                                     <Truck size={18} /> {t('manageSuppliers')}
@@ -308,7 +308,7 @@ export const InventoryPage: React.FC = () => {
                                         value={categoryFilter}
                                         onChange={(e) => setCategoryFilter(e.target.value)}
                                     >
-                                        <option value="All">All Categories</option>
+                                        <option value="All">{t('allCategories')}</option>
                                         {stats.categories.map(c => <option key={c} value={c}>{c}</option>)}
                                     </select>
                                 </div>
@@ -320,7 +320,7 @@ export const InventoryPage: React.FC = () => {
                                         value={stockFilter}
                                         onChange={(e) => setStockFilter(e.target.value as any)}
                                     >
-                                        <option value="All">All Status</option>
+                                        <option value="All">{t('allStatus')}</option>
                                         <option value="Low">{t('lowStock')}</option>
                                         {activeTab !== 'equipment' && <option value="Expired">{t('expiringSoon')}</option>}
                                         {activeTab === 'equipment' && <option value="Maintenance">{t('maintenanceDue')}</option>}
@@ -348,7 +348,7 @@ export const InventoryPage: React.FC = () => {
                                 {isLoading ? (
                                     <tr><td colSpan={7} className="p-20 text-center"><Loader2 className="animate-spin mx-auto text-primary-500 w-10 h-10"/></td></tr>
                                 ) : filteredItems.length === 0 ? (
-                                    <tr><td colSpan={7} className="p-20 text-center text-surface-400 italic">No items found matching your filters.</td></tr>
+                                    <tr><td colSpan={7} className="p-20 text-center text-surface-400 italic">{t('noItemsMatch')}</td></tr>
                                 ) : filteredItems.map(item => {
                                     const isLow = item.stock <= (item.minStock || 10);
                                     const stockPercent = Math.min(100, (item.stock / (item.minStock * 4 || 40)) * 100);
@@ -374,10 +374,10 @@ export const InventoryPage: React.FC = () => {
                                             <td className="py-4 px-6">
                                                 <div className="font-bold text-surface-900 dark:text-white flex items-center gap-2 text-base">
                                                     {item.name}
-                                                    {isLow && <span className="w-2 h-2 rounded-full bg-red-500 md:hidden" title="Low Stock"/>}
+                                                    {isLow && <span className="w-2 h-2 rounded-full bg-red-500 md:hidden" title={t('lowStockTooltip')}/>}
                                                 </div>
                                                 <div className="text-xs text-surface-500 mt-0.5 flex gap-2">
-                                                    <span className="bg-surface-100 dark:bg-surface-800 px-1.5 py-0.5 rounded border border-surface-200 dark:border-surface-700">{item.category || 'Uncategorized'}</span>
+                                                    <span className="bg-surface-100 dark:bg-surface-800 px-1.5 py-0.5 rounded border border-surface-200 dark:border-surface-700">{item.category || t('uncategorized')}</span>
                                                     {item.form && <span className="opacity-75">• {item.form}</span>}
                                                     {item.brand && <span className="opacity-75">• {item.brand}</span>}
                                                 </div>
@@ -390,7 +390,7 @@ export const InventoryPage: React.FC = () => {
                                                     )}>
                                                         {item.stock}
                                                     </span>
-                                                    {isLow && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 rounded-full font-bold">Low</span>}
+                                                    {isLow && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 rounded-full font-bold">{t('lowBadge')}</span>}
                                                 </div>
                                                 <div className="h-1.5 bg-surface-100 dark:bg-surface-700 rounded-full mt-2 overflow-hidden w-24">
                                                     <div 
@@ -423,7 +423,7 @@ export const InventoryPage: React.FC = () => {
                                                     </div>
                                                     {isMaintenanceDue && (
                                                         <span className="text-[10px] text-red-600 font-bold uppercase mt-1 block flex items-center gap-1">
-                                                            <AlertTriangle size={10} /> Due Now
+                                                            <AlertTriangle size={10} /> {t('dueNow')}
                                                         </span>
                                                     )}
                                                 </td>
@@ -448,10 +448,10 @@ export const InventoryPage: React.FC = () => {
                                                     >
                                                         <Pencil size={18} />
                                                     </button>
-                                                    <button 
-                                                        onClick={() => handleDelete(item.id)} 
+                                                    <button
+                                                        onClick={() => handleDelete(item.id)}
                                                         className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-red-500 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-                                                        title="Delete"
+                                                        title={t('delete')}
                                                     >
                                                         <Trash2 size={18} />
                                                     </button>

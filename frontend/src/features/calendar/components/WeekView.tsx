@@ -131,11 +131,15 @@ export const WeekView: React.FC<WeekViewProps> = ({ currentDate, appointments, o
                             const height = getHeight(apt.start, apt.end);
                             if (top === null) return null;
 
-                            const statusStyles = {
+                            const statusStyles: Record<string, string> = {
                                 confirmed: 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-800',
                                 pending: 'bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-800',
+                                checked_in: 'bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-800',
+                                in_progress: 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800',
                                 completed: 'bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200 dark:bg-purple-900/40 dark:text-purple-300 dark:border-purple-800',
-                                canceled: 'bg-red-50 text-red-800 border-red-100 opacity-60 dark:bg-red-900/20 dark:text-red-400'
+                                canceled: 'bg-red-50 text-red-800 border-red-100 opacity-60 dark:bg-red-900/20 dark:text-red-400',
+                                no_show: 'bg-red-50 text-red-800 border-red-100 opacity-60 dark:bg-red-900/20 dark:text-red-400',
+                                rescheduled: 'bg-surface-100 text-surface-700 border-surface-200 dark:bg-surface-800 dark:text-surface-300',
                             };
 
                             return (

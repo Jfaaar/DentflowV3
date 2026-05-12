@@ -17,8 +17,10 @@ import { Button } from '../../components/ui/Button';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { useAppointments } from '../appointments/hooks/useAppointments';
 import { api } from '../../lib/api';
+import { useLanguage } from '../language/LanguageContext';
 
 export const CalendarPage: React.FC = () => {
+  const { t } = useLanguage();
   const [viewMode, setViewMode] = useState<CalendarViewMode>('month');
   const [currentDate, setCurrentDate] = useState(new Date());
   
@@ -75,7 +77,7 @@ export const CalendarPage: React.FC = () => {
         setIsModalOpen(false);
         setEditingAppt(undefined);
     } else {
-        setAlertMessage({ title: "Error", message: "Failed to save appointment." });
+        setAlertMessage({ title: t('error'), message: t('saveAppointmentFailed') });
     }
   };
 
@@ -91,8 +93,10 @@ export const CalendarPage: React.FC = () => {
 
     if (conflict) {
         setAlertMessage({
-            title: 'Restoration Failed',
-            message: `The time slot is already occupied by ${conflict.patientName} (${conflict.status}).`
+            title: t('restorationFailed'),
+            message: t('restorationConflictMessage')
+                .replace('{name}', conflict.patientName)
+                .replace('{status}', t(conflict.status as 'confirmed' | 'pending' | 'completed' | 'canceled')),
         });
         return;
     }
@@ -102,7 +106,7 @@ export const CalendarPage: React.FC = () => {
     setIsSaving(false);
 
     if (!success) {
-        setAlertMessage({ title: "Error", message: "Failed to restore appointment." });
+        setAlertMessage({ title: t('error'), message: t('restoreAppointmentFailed') });
     }
   };
 
@@ -199,7 +203,7 @@ export const CalendarPage: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full">
-      <Topbar title="Schedule">
+      <Topbar title={t('schedule')}>
         {isSaving && <span className="text-xs text-surface-400 dark:text-surface-500 flex items-center animate-pulse"><Loader2 className="w-3 h-3 animate-spin mr-1"/> Saving...</span>}
       </Topbar>
       
@@ -243,7 +247,7 @@ export const CalendarPage: React.FC = () => {
         isOpen={isPatientDirectoryOpen}
         onClose={() => setIsPatientDirectoryOpen(false)}
         onSelect={handleSelectPatientFromDirectory}
-        title="Patient Directory"
+        title={t('patientDirectory')}
       />
 
       <PatientDetailsModal
@@ -267,7 +271,7 @@ export const CalendarPage: React.FC = () => {
       <Modal
         isOpen={!!alertMessage}
         onClose={() => setAlertMessage(null)}
-        title={alertMessage?.title || 'Alert'}
+        title={alertMessage?.title || t('alert')}
         maxWidth="sm"
       >
          <div className="flex flex-col items-center text-center p-2 dark:text-white">

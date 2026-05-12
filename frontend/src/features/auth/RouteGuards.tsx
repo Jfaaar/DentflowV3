@@ -4,6 +4,7 @@ import { useAuth } from './useAuth';
 import { usePermissions } from './usePermissions';
 import type { Permission } from '../../lib/permissions';
 import type { UserRole } from '../../types';
+import { LandingPage } from '../landing/LandingPage';
 
 const FullScreenLoader: React.FC = () => (
   <div className="flex h-screen w-screen items-center justify-center bg-surface-50 dark:bg-surface-900">
@@ -57,12 +58,13 @@ export const RequirePermission: React.FC<{
 };
 
 /**
- * Redirect to the role-appropriate landing page after login.
+ * Public root: shows the marketing landing page to unauthenticated visitors,
+ * and redirects authenticated users to their role-appropriate workspace.
  */
 export const RoleLanding: React.FC = () => {
   const { user, isLoading, isAuthenticated } = useAuth();
   if (isLoading) return <FullScreenLoader />;
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) return <LandingPage />;
   if (user?.role === 'super_admin') return <Navigate to="/backoffice" replace />;
   return <Navigate to="/app/dashboard" replace />;
 };

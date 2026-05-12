@@ -168,10 +168,10 @@ export const InvoicesPage: React.FC = () => {
 
     const totalMethods = Object.values(methods).reduce((a, b) => a + b, 0);
     const methodStats = [
-        { label: 'Cash', value: methods.cash, color: '#22c55e', icon: Banknote },     // Green
-        { label: 'Card', value: methods.card, color: '#3b82f6', icon: CreditCard },   // Blue
-        { label: 'Check', value: methods.check, color: '#f97316', icon: Receipt },    // Orange
-        { label: 'Transfer', value: methods.transfer, color: '#a855f7', icon: Landmark } // Purple
+        { label: t('methodCash'), value: methods.cash, color: '#22c55e', icon: Banknote },     // Green
+        { label: t('methodCard'), value: methods.card, color: '#3b82f6', icon: CreditCard },   // Blue
+        { label: t('methodCheck'), value: methods.check, color: '#f97316', icon: Receipt },    // Orange
+        { label: t('methodTransfer'), value: methods.transfer, color: '#a855f7', icon: Landmark } // Purple
     ].filter(m => m.value > 0);
 
     // Calculate conic gradient string
@@ -200,8 +200,8 @@ export const InvoicesPage: React.FC = () => {
 
         await api.invoices.create({
             appointmentId: 'manual',
-            patientId: 'manual', 
-            patientName: 'Walk-in Patient', // Simplified for manual entry
+            patientId: 'manual',
+            patientName: t('walkInPatient'), // Simplified for manual entry
             amount: totalAmount,
             paidAmount: initialPaid,
             payments: newStatus === 'paid' ? [{
@@ -217,7 +217,7 @@ export const InvoicesPage: React.FC = () => {
         setShowCreateModal(false);
         setNewAmount('');
     } catch(e) {
-        alert("Failed to create invoice");
+        alert(t('createInvoiceFailed'));
     } finally {
         setIsCreating(false);
     }
@@ -227,7 +227,7 @@ export const InvoicesPage: React.FC = () => {
       const remaining = inv.amount - (inv.paidAmount || 0);
       if (remaining <= 0) return;
       
-      if (!window.confirm(`Mark invoice for ${inv.amount.toFixed(2)} DH as fully paid?`)) return;
+      if (!window.confirm(t('markAsPaidConfirm').replace('{amount}', inv.amount.toFixed(2)))) return;
 
       setIsMarkingPaid(inv.id);
       try {
@@ -248,7 +248,7 @@ export const InvoicesPage: React.FC = () => {
           await api.invoices.update(updatedInvoice);
           refreshData();
       } catch (e) {
-          alert("Failed to update invoice");
+          alert(t('updateInvoiceFailed'));
       } finally {
           setIsMarkingPaid(null);
       }
@@ -271,13 +271,13 @@ export const InvoicesPage: React.FC = () => {
         {/* 1. Filter & Quick Actions */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex bg-white dark:bg-surface-800 p-1 rounded-lg border border-surface-200 dark:border-surface-700 shadow-sm">
-                <button onClick={() => applyDatePreset('today')} className="px-3 py-1.5 text-xs font-medium text-surface-600 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-md transition-colors">Today</button>
+                <button onClick={() => applyDatePreset('today')} className="px-3 py-1.5 text-xs font-medium text-surface-600 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-md transition-colors">{t('today')}</button>
                 <div className="w-px bg-surface-200 dark:bg-surface-700 my-1"/>
-                <button onClick={() => applyDatePreset('thisMonth')} className="px-3 py-1.5 text-xs font-medium text-surface-600 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-md transition-colors">This Month</button>
+                <button onClick={() => applyDatePreset('thisMonth')} className="px-3 py-1.5 text-xs font-medium text-surface-600 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-md transition-colors">{t('thisMonth')}</button>
                 <div className="w-px bg-surface-200 dark:bg-surface-700 my-1"/>
-                <button onClick={() => applyDatePreset('lastMonth')} className="px-3 py-1.5 text-xs font-medium text-surface-600 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-md transition-colors">Last Month</button>
+                <button onClick={() => applyDatePreset('lastMonth')} className="px-3 py-1.5 text-xs font-medium text-surface-600 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-md transition-colors">{t('lastMonth')}</button>
                 <div className="w-px bg-surface-200 dark:bg-surface-700 my-1"/>
-                <button onClick={() => applyDatePreset('thisYear')} className="px-3 py-1.5 text-xs font-medium text-surface-600 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-md transition-colors">This Year</button>
+                <button onClick={() => applyDatePreset('thisYear')} className="px-3 py-1.5 text-xs font-medium text-surface-600 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-md transition-colors">{t('thisYear')}</button>
             </div>
 
             <Button className="gap-2 shadow-lg shadow-primary-200 dark:shadow-none" onClick={() => setShowCreateModal(true)}>
@@ -293,7 +293,7 @@ export const InvoicesPage: React.FC = () => {
                     <h3 className="text-2xl font-bold text-surface-900 dark:text-white mt-1">{stats.totalRevenue.toFixed(0)} <span className="text-sm font-normal text-surface-500">DH</span></h3>
                 </div>
                 <div className="flex items-center gap-2 mt-3 text-xs text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded w-fit">
-                    <TrendingUp size={12} /> Revenue
+                    <TrendingUp size={12} /> {t('revenue')}
                 </div>
             </Card>
 
@@ -303,7 +303,7 @@ export const InvoicesPage: React.FC = () => {
                     <h3 className="text-2xl font-bold text-surface-900 dark:text-white mt-1">{stats.totalCollected.toFixed(0)} <span className="text-sm font-normal text-surface-500">DH</span></h3>
                 </div>
                 <div className="flex items-center gap-2 mt-3 text-xs text-green-600 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded w-fit">
-                    <Wallet size={12} /> Collected
+                    <Wallet size={12} /> {t('collected')}
                 </div>
             </Card>
 
@@ -313,17 +313,17 @@ export const InvoicesPage: React.FC = () => {
                     <h3 className="text-2xl font-bold text-surface-900 dark:text-white mt-1">{stats.totalOutstanding.toFixed(0)} <span className="text-sm font-normal text-surface-500">DH</span></h3>
                 </div>
                 <div className="flex items-center gap-2 mt-3 text-xs text-red-600 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded w-fit">
-                    <AlertCircle size={12} /> Outstanding
+                    <AlertCircle size={12} /> {t('outstanding')}
                 </div>
             </Card>
 
             <Card className="p-5 flex flex-col justify-between border-l-4 border-l-purple-500">
                 <div>
-                    <p className="text-xs font-bold text-surface-500 uppercase tracking-wider">Avg Invoice</p>
+                    <p className="text-xs font-bold text-surface-500 uppercase tracking-wider">{t('avgInvoice')}</p>
                     <h3 className="text-2xl font-bold text-surface-900 dark:text-white mt-1">{stats.avgInvoice.toFixed(0)} <span className="text-sm font-normal text-surface-500">DH</span></h3>
                 </div>
                 <div className="flex items-center gap-2 mt-3 text-xs text-purple-600 bg-purple-50 dark:bg-purple-900/20 px-2 py-1 rounded w-fit">
-                    <Coins size={12} /> Per Patient
+                    <Coins size={12} /> {t('perPatient')}
                 </div>
             </Card>
         </div>
@@ -334,10 +334,10 @@ export const InvoicesPage: React.FC = () => {
             <Card className="lg:col-span-2 p-6 flex flex-col h-[320px]">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="font-bold text-surface-900 dark:text-white flex items-center gap-2">
-                        <BarChart3 size={18} className="text-primary-500"/> Revenue Trend
+                        <BarChart3 size={18} className="text-primary-500"/> {t('revenueTrend')}
                     </h3>
                     <div className="text-xs text-surface-500 bg-surface-100 dark:bg-surface-800 px-2 py-1 rounded">
-                        {filteredInvoices.length} invoices in range
+                        {t('invoicesInRange').replace('{count}', String(filteredInvoices.length))}
                     </div>
                 </div>
                 
@@ -358,7 +358,7 @@ export const InvoicesPage: React.FC = () => {
                         </div>
                     )) : (
                         <div className="w-full h-full flex items-center justify-center text-surface-400 italic text-sm">
-                            No data for selected period
+                            {t('noDataForPeriod')}
                         </div>
                     )}
                 </div>
@@ -367,20 +367,20 @@ export const InvoicesPage: React.FC = () => {
             {/* 4. Payment Distribution (Donut) */}
             <Card className="flex flex-col h-[320px] p-6">
                 <h3 className="font-bold text-surface-900 dark:text-white flex items-center gap-2 mb-6">
-                    <PieChart size={18} className="text-primary-500"/> Payment Methods
+                    <PieChart size={18} className="text-primary-500"/> {t('paymentMethods')}
                 </h3>
                 
                 <div className="flex-1 flex flex-col items-center justify-center">
                     {stats.totalMethods > 0 ? (
                         <div className="relative w-40 h-40 rounded-full mb-6" style={{ background: `conic-gradient(${stats.gradientString})` }}>
                             <div className="absolute inset-4 bg-white dark:bg-surface-800 rounded-full flex flex-col items-center justify-center">
-                                <span className="text-xs text-surface-500 font-medium">Total</span>
+                                <span className="text-xs text-surface-500 font-medium">{t('total')}</span>
                                 <span className="text-lg font-bold text-surface-900 dark:text-white">{stats.totalCollected.toFixed(0)}</span>
                             </div>
                         </div>
                     ) : (
                         <div className="w-40 h-40 rounded-full border-4 border-surface-100 dark:border-surface-800 border-dashed flex items-center justify-center mb-6 text-surface-400 text-xs">
-                            No Payments
+                            {t('noPayments')}
                         </div>
                     )}
 
@@ -498,12 +498,12 @@ export const InvoicesPage: React.FC = () => {
                                     </td>
                                     <td className="py-4 px-4 text-right">
                                         <div className="flex justify-end gap-2">
-                                            <Button 
-                                                variant="ghost" 
-                                                size="icon" 
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
                                                 className="text-surface-400 hover:text-surface-600 h-8 w-8"
-                                                title="Download PDF"
-                                                onClick={() => alert("Mock PDF Download")}
+                                                title={t('downloadPdf')}
+                                                onClick={() => alert(t('mockPdfDownload'))}
                                             >
                                                 <Download size={16} />
                                             </Button>
@@ -517,14 +517,14 @@ export const InvoicesPage: React.FC = () => {
                                                         disabled={isMarkingPaid === inv.id}
                                                         title={t('markPaid')}
                                                     >
-                                                        {isMarkingPaid === inv.id ? <Loader2 size={12} className="animate-spin" /> : <Check size={14}/>} 
-                                                        <span className="hidden sm:inline">Pay</span>
+                                                        {isMarkingPaid === inv.id ? <Loader2 size={12} className="animate-spin" /> : <Check size={14}/>}
+                                                        <span className="hidden sm:inline">{t('pay')}</span>
                                                     </Button>
-                                                    <Button 
-                                                        size="sm" 
+                                                    <Button
+                                                        size="sm"
                                                         className="h-8 text-xs bg-primary-600 hover:bg-primary-700 px-3 shadow-none gap-1.5"
                                                         onClick={() => setInvoiceToPay(inv)}
-                                                        title="Add Partial Payment"
+                                                        title={t('addPartialPayment')}
                                                     >
                                                         <PlusCircle size={14}/>
                                                     </Button>
@@ -550,8 +550,8 @@ export const InvoicesPage: React.FC = () => {
       >
           <form onSubmit={handleCreateInvoice} className="space-y-4 p-1">
               <div className="bg-surface-50 dark:bg-surface-800 p-3 rounded-lg border border-surface-200 dark:border-surface-700">
-                    <p className="text-sm font-bold text-surface-900 dark:text-white">Manual Invoice</p>
-                    <p className="text-xs text-surface-500">For walk-in or general services</p>
+                    <p className="text-sm font-bold text-surface-900 dark:text-white">{t('manualInvoice')}</p>
+                    <p className="text-xs text-surface-500">{t('walkInServices')}</p>
               </div>
               
               <div className="space-y-1.5">

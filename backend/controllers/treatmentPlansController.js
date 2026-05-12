@@ -3,6 +3,8 @@ const {
   treatmentPlanCreateSchema,
   treatmentPlanUpdateSchema,
   treatmentPlansListQuerySchema,
+  planItemCreateSchema,
+  convertToAppointmentsSchema,
 } = require('../validation/treatmentPlans');
 const { idParamSchema } = require('../validation/common');
 const { ApiError } = require('../middleware/errorHandler');
@@ -42,4 +44,55 @@ async function cancel(req, res) {
   res.status(204).end();
 }
 
-module.exports = { list, get, create, update, cancel };
+async function accept(req, res) {
+  const { id } = parseOrThrow(idParamSchema, req.params, 'params');
+  res.json({ data: await service.acceptTreatmentPlan(req, id) });
+}
+
+async function reject(req, res) {
+  const { id } = parseOrThrow(idParamSchema, req.params, 'params');
+  res.json({ data: await service.rejectTreatmentPlan(req, id) });
+}
+
+async function listItems(req, res) {
+  const { id } = parseOrThrow(idParamSchema, req.params, 'params');
+  res.json({ data: await service.listItems(req, id) });
+}
+
+async function addItem(req, res) {
+  const { id } = parseOrThrow(idParamSchema, req.params, 'params');
+  const input = parseOrThrow(planItemCreateSchema, req.body, 'body');
+  res.status(201).json({ data: await service.addItem(req, id, input) });
+}
+
+async function removeItem(req, res) {
+  const { id } = parseOrThrow(idParamSchema, req.params, 'params');
+  await service.removeItem(req, id);
+  res.status(204).end();
+}
+
+async function convertToInvoice(req, res) {
+  const { id } = parseOrThrow(idParamSchema, req.params, 'params');
+  res.json({ data: await service.convertPlanToInvoice(req, id) });
+}
+
+async function convertToAppointments(req, res) {
+  const { id } = parseOrThrow(idParamSchema, req.params, 'params');
+  const opts = parseOrThrow(convertToAppointmentsSchema, req.body, 'body');
+  res.json({ data: await service.convertPlanToAppointments(req, id, opts) });
+}
+
+module.exports = {
+  list,
+  get,
+  create,
+  update,
+  cancel,
+  accept,
+  reject,
+  listItems,
+  addItem,
+  removeItem,
+  convertToInvoice,
+  convertToAppointments,
+};

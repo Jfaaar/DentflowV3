@@ -95,8 +95,8 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
     e.preventDefault();
 
     const newErrors: FormErrors = {};
-    if (!name.trim()) newErrors.name = "Full name is required";
-    if (!phone.trim()) newErrors.phone = "Phone number is required";
+    if (!name.trim()) newErrors.name = t('fullNameRequired');
+    if (!phone.trim()) newErrors.phone = t('phoneNumberRequired');
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -137,7 +137,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
         setErrors(fieldErrs as FormErrors);
       } else {
         // Network / 5xx / unknown: keep modal open and toast the cause.
-        toastError(err, 'Failed to save patient');
+        toastError(err, t('savePatientFailed'));
       }
     } finally {
       setIsSubmitting(false);
@@ -191,7 +191,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
 
                 <Input
                     label={t('fullName')}
-                    placeholder="e.g. John Doe"
+                    placeholder={t('placeholderName')}
                     value={name}
                     onChange={e => setName(e.target.value)}
                     error={errors.name}
@@ -218,7 +218,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
                             <div className="relative">
                                 <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400" />
                                 <Input
-                                    placeholder="600000000"
+                                    placeholder={t('placeholderPhoneNumber')}
                                     value={phone}
                                     onChange={e => setPhone(e.target.value)}
                                     error={errors.phone}
@@ -234,7 +234,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
                     <Input
                         label={t('emailOptional')}
                         type="email"
-                        placeholder="e.g. john@example.com"
+                        placeholder={t('placeholderEmail')}
                         value={email}
                         onChange={e => setEmail(e.target.value)}
                         error={errors.email}
@@ -246,7 +246,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
                     <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400 z-10" />
                     <Input
                         label={t('address')}
-                        placeholder="e.g. 123 Main St, Casablanca"
+                        placeholder={t('placeholderAddress')}
                         value={address}
                         onChange={e => setAddress(e.target.value)}
                         error={errors.address}
@@ -276,7 +276,7 @@ export const PatientFormModal: React.FC<PatientFormModalProps> = ({
                             value={gender}
                             onChange={(e) => setGender(e.target.value as any)}
                         >
-                            <option value="">Select...</option>
+                            <option value="">{t('selectEllipsis')}</option>
                             <option value="male">{t('male')}</option>
                             <option value="female">{t('female')}</option>
                         </select>

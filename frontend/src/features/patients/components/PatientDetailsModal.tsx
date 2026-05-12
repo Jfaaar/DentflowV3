@@ -216,7 +216,7 @@ export const PatientDetailsModal: React.FC<PatientDetailsModalProps> = ({
                                 <button
                                     onClick={(e) => openWhatsApp(e, patient.phone)}
                                     className="ml-1 p-1 text-green-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-full transition-colors"
-                                    title="Chat on WhatsApp"
+                                    title={t('chatOnWhatsapp')}
                                 >
                                     <MessageCircle size={16} />
                                 </button>
@@ -424,7 +424,7 @@ export const PatientDetailsModal: React.FC<PatientDetailsModalProps> = ({
                                 {t(inv.status)}
                             </span>
                             {inv.paidAmount && inv.paidAmount > 0 && inv.status !== 'paid' && (
-                                <span className="text-xs text-green-600 mt-1 block">Paid: {inv.paidAmount.toFixed(2)}</span>
+                                <span className="text-xs text-green-600 mt-1 block">{t('paid')}: {inv.paidAmount.toFixed(2)}</span>
                             )}
                          </div>
                     </div>

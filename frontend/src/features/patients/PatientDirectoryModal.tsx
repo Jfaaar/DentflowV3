@@ -57,8 +57,8 @@ export const PatientDirectoryModal: React.FC<PatientDirectoryModalProps> = ({ is
     e.preventDefault();
     
     const newErrors: { name?: string; phone?: string } = {};
-    if (!formData.name.trim()) newErrors.name = "Name is required";
-    if (!formData.phone.trim()) newErrors.phone = "Phone is required";
+    if (!formData.name.trim()) newErrors.name = t('nameRequired');
+    if (!formData.phone.trim()) newErrors.phone = t('phoneRequired');
     
     if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors);
@@ -84,7 +84,7 @@ export const PatientDirectoryModal: React.FC<PatientDirectoryModalProps> = ({ is
             resetForm();
         }
     } catch (e) {
-        alert("Failed to create patient.");
+        alert(t('createPatientFailed'));
     }
   };
 
@@ -186,7 +186,7 @@ export const PatientDirectoryModal: React.FC<PatientDirectoryModalProps> = ({ is
                                 <button
                                     onClick={(e) => openWhatsApp(e, patient.phone)}
                                     className="ml-1 p-1 text-surface-300 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-full transition-colors"
-                                    title="Chat on WhatsApp"
+                                    title={t('chatOnWhatsapp')}
                                 >
                                     <MessageCircle size={14} />
                                 </button>
@@ -220,9 +220,9 @@ export const PatientDirectoryModal: React.FC<PatientDirectoryModalProps> = ({ is
                     </div>
 
                     <div className="space-y-5">
-                        <Input 
+                        <Input
                             label={t('fullName')}
-                            placeholder="e.g. Sarah Connor" 
+                            placeholder={t('placeholderNameSarah')}
                             value={formData.name}
                             onChange={e => setFormData({...formData, name: e.target.value})}
                             error={errors.name}
@@ -249,7 +249,7 @@ export const PatientDirectoryModal: React.FC<PatientDirectoryModalProps> = ({ is
                                     <div className="relative">
                                         <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400" />
                                         <Input
-                                            placeholder="600000000"
+                                            placeholder={t('placeholderPhoneNumber')}
                                             value={formData.phone}
                                             onChange={e => setFormData({ ...formData, phone: e.target.value })}
                                             error={errors.phone}
@@ -260,9 +260,9 @@ export const PatientDirectoryModal: React.FC<PatientDirectoryModalProps> = ({ is
                             </div>
                         </div>
 
-                        <Input 
+                        <Input
                             label={t('emailOptional')}
-                            placeholder="e.g. sarah@example.com" 
+                            placeholder={t('placeholderEmailSarah')}
                             type="email"
                             value={formData.email}
                             onChange={e => setFormData({...formData, email: e.target.value})}

@@ -57,4 +57,36 @@ async function restore(req, res) {
   res.json({ data: await service.restoreAppointment(req, id) });
 }
 
-module.exports = { list, get, create, update, cancel, cancelMany, restore };
+async function checkIn(req, res) {
+  const { id } = parseOrThrow(idParamSchema, req.params, 'params');
+  res.json({ data: await service.checkInAppointment(req, id) });
+}
+
+async function start(req, res) {
+  const { id } = parseOrThrow(idParamSchema, req.params, 'params');
+  res.json({ data: await service.startAppointment(req, id) });
+}
+
+async function complete(req, res) {
+  const { id } = parseOrThrow(idParamSchema, req.params, 'params');
+  res.json({ data: await service.completeAppointment(req, id) });
+}
+
+async function noShow(req, res) {
+  const { id } = parseOrThrow(idParamSchema, req.params, 'params');
+  res.json({ data: await service.markNoShow(req, id) });
+}
+
+module.exports = {
+  list,
+  get,
+  create,
+  update,
+  cancel,
+  cancelMany,
+  restore,
+  checkIn,
+  start,
+  complete,
+  noShow,
+};

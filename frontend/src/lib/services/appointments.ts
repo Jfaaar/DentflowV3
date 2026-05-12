@@ -65,6 +65,23 @@ export const appointmentsService = {
   async archive(id: string): Promise<void> {
     return this.cancel(id);
   },
+
+  // Waiting-room status transitions
+  async checkIn(id: string): Promise<Appointment> {
+    return http<Appointment>('POST', `appointments/${id}/check-in`);
+  },
+
+  async start(id: string): Promise<Appointment> {
+    return http<Appointment>('POST', `appointments/${id}/start`);
+  },
+
+  async complete(id: string): Promise<Appointment> {
+    return http<Appointment>('POST', `appointments/${id}/complete`);
+  },
+
+  async noShow(id: string): Promise<Appointment> {
+    return http<Appointment>('POST', `appointments/${id}/no-show`);
+  },
 };
 
 export type { ListOpts as AppointmentsListOpts };

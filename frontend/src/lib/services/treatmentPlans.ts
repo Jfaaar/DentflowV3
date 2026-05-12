@@ -1,11 +1,12 @@
 // Treatment plans service — thin fetch shim over /api/v1/treatment-plans.
 import { http } from '../http';
-import type { TreatmentPlan } from '../../types';
+import type { TreatmentPlan, TreatmentPlanItem } from '../../types';
 
-interface ListOpts {
+export interface ListOpts {
   page?: number;
   pageSize?: number;
   patientId?: string;
+  search?: string;
   filters?: { status?: TreatmentPlan['status'] };
 }
 
@@ -16,6 +17,28 @@ interface BackendPaged {
   total: number;
 }
 
+export interface AddItemInput {
+  description: string;
+  price: number;
+  tooth?: string;
+  surface?: string;
+}
+
+export interface ConvertToAppointmentsInput {
+  startDate: string; // ISO datetime
+  durationMinutes?: number;
+  spacingDays?: number;
+}
+
+export interface ConvertToInvoiceResult {
+  invoiceId: string;
+  amount: number;
+}
+
+export interface ConvertToAppointmentsResult {
+  appointments: string[];
+}
+
 export const treatmentPlansService = {
   async list(opts: ListOpts = {}) {
     const r = await http<BackendPaged>('GET', 'treatment-plans', {
@@ -23,13 +46,14 @@ export const treatmentPlansService = {
         page: opts.page,
         pageSize: opts.pageSize,
         patientId: opts.patientId,
+        search: opts.search,
         status: opts.filters?.status,
       },
     });
-    return { data: r.data, total: r.total };
+    return { data: r.data, total: r.total, page: r.page, pageSize: r.pageSize };
   },
 
-  async get(id: string) {
+  async get(id: string): Promise<TreatmentPlan | null> {
     try {
       return await http<TreatmentPlan>('GET', `treatment-plans/${id}`);
     } catch (e: unknown) {
@@ -38,7 +62,7 @@ export const treatmentPlansService = {
     }
   },
 
-  async create(input: Omit<TreatmentPlan, 'id' | 'clinicId'>) {
+  async create(input: Omit<TreatmentPlan, 'id' | 'clinicId' | 'patientName'>) {
     return http<TreatmentPlan>('POST', 'treatment-plans', { body: input });
   },
 
@@ -46,9 +70,39 @@ export const treatmentPlansService = {
     return http<TreatmentPlan>('PUT', `treatment-plans/${id}`, { body: input });
   },
 
-  async archive(id: string) {
+  async cancel(id: string) {
     await http<void>('POST', `treatment-plans/${id}/cancel`);
   },
-};
 
-export type { ListOpts as TreatmentPlansListOpts };
+  async accept(id: string) {
+    return http<TreatmentPlan>('POST', `treatment-plans/${id}/accept`);
+  },
+
+  async reject(id: string) {
+    return http<TreatmentPlan>('POST', `treatment-plans/${id}/reject`);
+  },
+
+  async listItems(planId: string) {
+    return http<TreatmentPlanItem[]>('GET', `treatment-plans/${planId}/items`);
+  },
+
+  async addItem(planId: string, input: AddItemInput) {
+    return http<TreatmentPlanItem>('POST', `treatment-plans/${planId}/items`, { body: input });
+  },
+
+  async removeItem(itemId: string) {
+    await http<void>('DELETE', `treatment-plans/items/${itemId}`);
+  },
+
+  async convertToInvoice(planId: string) {
+    return http<ConvertToInvoiceResult>('POST', `treatment-plans/${planId}/convert-to-invoice`);
+  },
+
+  async convertToAppointments(planId: string, input: ConvertToAppointmentsInput) {
+    return http<ConvertToAppointmentsResult>(
+      'POST',
+      `treatment-plans/${planId}/convert-to-appointments`,
+      { body: input },
+    );
+  },
+};

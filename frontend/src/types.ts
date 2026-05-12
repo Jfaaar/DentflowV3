@@ -26,7 +26,15 @@ export interface User {
   avatar?: string;
 }
 
-export type AppointmentStatus = 'confirmed' | 'pending' | 'canceled' | 'completed';
+export type AppointmentStatus =
+  | 'pending'
+  | 'confirmed'
+  | 'checked_in'
+  | 'in_progress'
+  | 'completed'
+  | 'canceled'
+  | 'no_show'
+  | 'rescheduled';
 
 export interface Patient {
   id: string;
@@ -54,10 +62,17 @@ export interface Appointment {
   id: string;
   patientId: string;
   patientName: string; // Denormalized for MVP display
+  doctorId?: string;
+  doctorName?: string;
+  roomId?: string;
+  roomName?: string;
+  appointmentType?: string;
   start: string; // ISO Date String
   end: string; // ISO Date String
   status: AppointmentStatus;
   observation?: string;
+  checkedInAt?: string;
+  completedAt?: string;
   createdAt: string;
 }
 
@@ -231,14 +246,18 @@ export interface TreatmentPlan {
   id: string;
   clinicId: string;
   patientId: string;
+  patientName?: string;
   doctorId?: string;
   title?: string;
+  notes?: string;
   status: 'draft' | 'proposed' | 'accepted' | 'rejected' | 'completed' | 'canceled';
   estimatedTotal?: number;
   discount?: number;
   insuranceCovered?: number;
   patientResponsibility?: number;
   acceptedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface InsurancePolicy {
@@ -331,15 +350,19 @@ export type ToothCondition =
   | 'fracture'
   | 'other';
 
+// Items on a treatment plan are stored in the `treatments` table
+// (linked via plan_id), so the shape mirrors a Treatment row.
 export interface TreatmentPlanItem {
   id: string;
-  planId: string;
-  toothId?: string;
+  planId?: string;
+  patientId: string;
   description: string;
+  tooth?: string;
+  surface?: string;
   price: number;
-  quantity: number;
-  estimatedDuration?: number;
-  status?: 'planned' | 'completed';
+  status: 'planned' | 'in_progress' | 'completed' | 'canceled';
+  performedAt?: string;
+  createdAt?: string;
 }
 
 export interface TreatmentMaterial {

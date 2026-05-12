@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Stethoscope, Save, AlertCircle } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Stethoscope, Save, AlertCircle, ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,7 @@ import {
   type SpecialtyCode,
 } from './api/settingsApi';
 import { useAuth } from '../auth/useAuth';
+import { useGetFeaturesQuery } from './api/featuresApi';
 
 const SPECIALTY_LABEL_KEYS: Record<SpecialtyCode, string> = {
   general_practice: 'specialtyGeneralPractice',
@@ -41,6 +42,29 @@ export const SpecialtyPage: React.FC = () => {
       setEnabled(data.enabledSpecialties);
     }
   }, [data]);
+
+  // Live preview: given the current candidate `enabled` selection, which
+  // features would turn on or off relative to the persisted state? Features
+  // with a manual override are listed separately — they stay pinned regardless.
+  const { data: featuresList } = useGetFeaturesQuery();
+  const featurePreview = useMemo(() => {
+    if (!featuresList) return { turnsOn: [], turnsOff: [], pinned: [] };
+    const turnsOn: string[] = [];
+    const turnsOff: string[] = [];
+    const pinned: string[] = [];
+    for (const f of featuresList) {
+      if (f.source === 'override') {
+        pinned.push(`${f.displayName} (${f.enabled ? 'on' : 'off'})`);
+        continue;
+      }
+      const wouldEnable = f.defaultSpecialties.some((s) => enabled.includes(s));
+      if (wouldEnable && !f.enabled) turnsOn.push(f.displayName);
+      else if (!wouldEnable && f.enabled) turnsOff.push(f.displayName);
+    }
+    return { turnsOn, turnsOff, pinned };
+  }, [featuresList, enabled]);
+  const hasPreviewChanges =
+    featurePreview.turnsOn.length > 0 || featurePreview.turnsOff.length > 0;
 
   if (user?.role !== 'clinic_admin') {
     return (
@@ -142,6 +166,55 @@ export const SpecialtyPage: React.FC = () => {
           ))}
         </div>
       </Card>
+
+      {hasPreviewChanges && (
+        <Card className="border-amber-200 bg-amber-50 dark:bg-amber-900/10">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-lg text-amber-600 dark:text-amber-300">
+              <Sparkles size={18} />
+            </div>
+            <h2 className="text-base font-semibold text-amber-900 dark:text-amber-100">
+              {t('specialtyPreviewTitle', 'Features that will change when you save')}
+            </h2>
+          </div>
+          <p className="text-xs text-amber-800/80 dark:text-amber-200/70 mb-3">
+            {t(
+              'specialtyPreviewDescription',
+              'Specialty changes update the default for these features. Anything you have manually overridden in the Features page stays pinned.',
+            )}
+          </p>
+          {featurePreview.turnsOn.length > 0 && (
+            <div className="mb-2">
+              <div className="text-xs font-semibold text-green-700 dark:text-green-300 mb-1">
+                <ArrowRight size={12} className="inline mr-1" />
+                {t('specialtyPreviewTurnsOn', 'Will turn on')}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {featurePreview.turnsOn.map((n) => (
+                  <span key={n} className="text-xs px-2 py-0.5 rounded bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200">
+                    {n}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {featurePreview.turnsOff.length > 0 && (
+            <div>
+              <div className="text-xs font-semibold text-red-700 dark:text-red-300 mb-1">
+                <ArrowRight size={12} className="inline mr-1" />
+                {t('specialtyPreviewTurnsOff', 'Will turn off')}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {featurePreview.turnsOff.map((n) => (
+                  <span key={n} className="text-xs px-2 py-0.5 rounded bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200">
+                    {n}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
 
       <Card>
         <h2 className="text-lg font-semibold mb-2">

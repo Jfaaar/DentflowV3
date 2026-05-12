@@ -110,13 +110,13 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
             />
             <div className="mb-2 text-sm font-medium text-surface-500 flex items-center gap-2">
                 <ArrowRight size={16} />
-                New: <span className={cn("font-bold", newStock < 0 ? "text-red-500" : "text-surface-900 dark:text-white")}>{newStock}</span>
+                {t('newStock')}: <span className={cn("font-bold", newStock < 0 ? "text-red-500" : "text-surface-900 dark:text-white")}>{newStock}</span>
             </div>
         </div>
 
-        <Input 
+        <Input
             label={t('reason')}
-            placeholder={type === 'add' ? "e.g. Purchase, Return" : "e.g. Damaged, Expired, Correction"}
+            placeholder={type === 'add' ? t('placeholderAddReason') : t('placeholderRemoveReason')}
             value={reason}
             onChange={e => setReason(e.target.value)}
             required

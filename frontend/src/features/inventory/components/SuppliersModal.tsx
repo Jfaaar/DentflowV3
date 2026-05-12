@@ -37,7 +37,7 @@ export const SuppliersModal: React.FC<SuppliersModalProps> = ({ isOpen, onClose 
       const data = await api.suppliers.list();
       setSuppliers(data);
     } catch (e) {
-      console.error("Failed to load suppliers");
+      console.error('Failed to load suppliers');
     } finally {
       setIsLoading(false);
     }
@@ -61,7 +61,7 @@ export const SuppliersModal: React.FC<SuppliersModalProps> = ({ isOpen, onClose 
       await api.suppliers.delete(id);
       fetchSuppliers();
     } catch (e) {
-      alert("Failed to delete supplier");
+      alert(t('deleteSupplierFailed'));
     }
   };
 
@@ -79,7 +79,7 @@ export const SuppliersModal: React.FC<SuppliersModalProps> = ({ isOpen, onClose 
       await fetchSuppliers();
       setView('list');
     } catch (e) {
-      alert("Failed to save supplier");
+      alert(t('saveSupplierFailed'));
     } finally {
       setIsSubmitting(false);
     }

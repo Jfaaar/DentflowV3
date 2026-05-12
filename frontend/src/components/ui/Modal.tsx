@@ -58,8 +58,12 @@ export const Modal: React.FC<ModalProps> = ({
   };
 
   return createPortal(
-    <div 
-      className={cn("fixed inset-0 z-[100] flex items-center justify-center p-4 bg-surface-900/50 dark:bg-black/70 backdrop-blur-sm animate-fade-in", className)}
+    <div
+      // No backdrop-blur here: it forces the GPU to re-rasterize the entire
+      // viewport on every paint underneath the modal (Topbar, Odontogram, etc.),
+      // which makes mouse and click feel laggy on lower-end machines. A solid
+      // dark scrim gives equivalent visual separation for free.
+      className={cn("fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gradient-to-br from-surface-900/60 to-primary-950/70 dark:from-black/75 dark:to-primary-950/85 animate-fade-in", className)}
       onClick={handleBackdropClick}
     >
       <div
@@ -69,7 +73,7 @@ export const Modal: React.FC<ModalProps> = ({
           sizeClasses[maxWidth]
         )}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-surface-100 dark:border-surface-800 bg-white/50 dark:bg-surface-900/50 backdrop-blur-xl sticky top-0 z-10">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-surface-100 dark:border-surface-800 bg-white dark:bg-surface-900 sticky top-0 z-10">
           <h2 className="text-lg font-bold text-surface-900 dark:text-surface-100 tracking-tight">{title}</h2>
           <button
             onClick={onClose}

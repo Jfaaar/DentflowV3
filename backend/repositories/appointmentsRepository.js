@@ -1,7 +1,14 @@
 // Appointments — pg.
-const SELECT = `a.id, a.patient_id, a.starts_at, a.ends_at, a.status,
-  a.observation, a.created_at, p.full_name AS patient_full_name`;
-const FROM_JOIN = `appointments a LEFT JOIN patients p ON p.id = a.patient_id`;
+const SELECT = `a.id, a.patient_id, a.doctor_id, a.room_id, a.appointment_type,
+  a.starts_at, a.ends_at, a.status, a.observation,
+  a.checked_in_at, a.completed_at, a.created_at,
+  p.full_name AS patient_full_name,
+  doc.name AS doctor_name,
+  rm.name AS room_name`;
+const FROM_JOIN = `appointments a
+  LEFT JOIN patients p ON p.id = a.patient_id
+  LEFT JOIN profiles doc ON doc.id = a.doctor_id
+  LEFT JOIN rooms rm ON rm.id = a.room_id`;
 
 function fromDb(row) {
   if (!row) return null;
@@ -9,10 +16,17 @@ function fromDb(row) {
     id: row.id,
     patientId: row.patient_id,
     patientName: row.patient_full_name ?? '',
+    doctorId: row.doctor_id ?? undefined,
+    doctorName: row.doctor_name ?? undefined,
+    roomId: row.room_id ?? undefined,
+    roomName: row.room_name ?? undefined,
+    appointmentType: row.appointment_type ?? undefined,
     start: row.starts_at,
     end: row.ends_at,
     status: row.status,
     observation: row.observation ?? undefined,
+    checkedInAt: row.checked_in_at ?? undefined,
+    completedAt: row.completed_at ?? undefined,
     createdAt: row.created_at,
   };
 }
@@ -77,4 +91,77 @@ async function cancelMany(db, ids) {
   await db.query(`UPDATE appointments SET status = 'canceled' WHERE id = ANY($1::uuid[])`, [ids]);
 }
 
-module.exports = { list, get, create, update, cancel, cancelMany };
+// ─── Status transitions ─────────────────────────────────────────────────────
+//
+// Each transition method updates status (and the appropriate timestamp)
+// atomically and writes a row to appointment_logs for the audit trail.
+// Returns the refreshed appointment via get().
+
+async function logEvent(db, id, event, userId) {
+  // Look up clinic_id off the appointment so we don't have to pass it in.
+  await db.query(
+    `INSERT INTO appointment_logs (appointment_id, clinic_id, event, created_by)
+     SELECT id, clinic_id, $2, $3 FROM appointments WHERE id = $1`,
+    [id, event, userId ?? null],
+  );
+}
+
+async function checkIn(db, id, userId) {
+  const r = await db.query(
+    `UPDATE appointments
+       SET status = 'checked_in',
+           checked_in_at = COALESCE(checked_in_at, NOW())
+     WHERE id = $1
+     RETURNING id`,
+    [id],
+  );
+  if (r.rowCount === 0) return null;
+  await logEvent(db, id, 'checked_in', userId);
+  return get(db, id);
+}
+
+async function start(db, id, userId) {
+  const r = await db.query(
+    `UPDATE appointments SET status = 'in_progress' WHERE id = $1 RETURNING id`,
+    [id],
+  );
+  if (r.rowCount === 0) return null;
+  await logEvent(db, id, 'started', userId);
+  return get(db, id);
+}
+
+async function complete(db, id, userId) {
+  const r = await db.query(
+    `UPDATE appointments
+       SET status = 'completed', completed_at = NOW()
+     WHERE id = $1
+     RETURNING id`,
+    [id],
+  );
+  if (r.rowCount === 0) return null;
+  await logEvent(db, id, 'completed', userId);
+  return get(db, id);
+}
+
+async function noShow(db, id, userId) {
+  const r = await db.query(
+    `UPDATE appointments SET status = 'no_show' WHERE id = $1 RETURNING id`,
+    [id],
+  );
+  if (r.rowCount === 0) return null;
+  await logEvent(db, id, 'no_show', userId);
+  return get(db, id);
+}
+
+module.exports = {
+  list,
+  get,
+  create,
+  update,
+  cancel,
+  cancelMany,
+  checkIn,
+  start,
+  complete,
+  noShow,
+};

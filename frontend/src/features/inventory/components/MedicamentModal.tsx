@@ -145,10 +145,10 @@ export const MedicamentModal: React.FC<InventoryItemModalProps> = ({
 
         {/* Section 1: Basic Info */}
         <div className="space-y-4">
-            <h4 className="text-xs font-bold text-surface-500 uppercase tracking-wider border-b border-surface-100 dark:border-surface-800 pb-2">Basic Information</h4>
-            <Input 
+            <h4 className="text-xs font-bold text-surface-500 uppercase tracking-wider border-b border-surface-100 dark:border-surface-800 pb-2">{t('basicInformation')}</h4>
+            <Input
                 label={t('medicamentName')}
-                placeholder={type === 'medicament' ? "e.g. Amoxicillin" : type === 'equipment' ? "e.g. Dental Chair" : "e.g. Latex Gloves"}
+                placeholder={type === 'medicament' ? t('placeholderMedicament') : type === 'equipment' ? t('placeholderEquipment') : t('placeholderConsumable')}
                 value={name}
                 onChange={e => setName(e.target.value)}
                 required
@@ -158,18 +158,18 @@ export const MedicamentModal: React.FC<InventoryItemModalProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {type === 'medicament' && (
-                    <Input 
+                    <Input
                         label={t('form')}
-                        placeholder="e.g. Tablet, Syrup"
+                        placeholder={t('placeholderForm')}
                         value={form}
                         onChange={e => setForm(e.target.value)}
                     />
                 )}
-                
+
                 {(type === 'consumable' || type === 'equipment') && (
-                    <Input 
+                    <Input
                         label={t('brand')}
-                        placeholder="e.g. 3M, Dentsply"
+                        placeholder={t('placeholderBrand')}
                         value={brand}
                         onChange={e => setBrand(e.target.value)}
                     />
@@ -181,8 +181,8 @@ export const MedicamentModal: React.FC<InventoryItemModalProps> = ({
                     </label>
                     <div className="relative">
                         <Tag size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400" />
-                        <Input 
-                            placeholder={type === 'medicament' ? "Antibiotic" : "Hygiene"}
+                        <Input
+                            placeholder={type === 'medicament' ? t('placeholderCategoryMed') : t('placeholderCategoryGeneric')}
                             value={category}
                             onChange={e => setCategory(e.target.value)}
                             className="pl-10"
@@ -194,7 +194,7 @@ export const MedicamentModal: React.FC<InventoryItemModalProps> = ({
 
         {/* Section 2: Stock & Values */}
         <div className="space-y-4">
-            <h4 className="text-xs font-bold text-surface-500 uppercase tracking-wider border-b border-surface-100 dark:border-surface-800 pb-2">Stock Control</h4>
+            <h4 className="text-xs font-bold text-surface-500 uppercase tracking-wider border-b border-surface-100 dark:border-surface-800 pb-2">{t('stockControl')}</h4>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-surface-50 dark:bg-surface-800 p-4 rounded-xl border border-surface-200 dark:border-surface-700">
                 <div className="col-span-2 md:col-span-1">
@@ -241,7 +241,7 @@ export const MedicamentModal: React.FC<InventoryItemModalProps> = ({
 
         {/* Section 3: Specifics */}
         <div className="space-y-4">
-            <h4 className="text-xs font-bold text-surface-500 uppercase tracking-wider border-b border-surface-100 dark:border-surface-800 pb-2">Details</h4>
+            <h4 className="text-xs font-bold text-surface-500 uppercase tracking-wider border-b border-surface-100 dark:border-surface-800 pb-2">{t('details')}</h4>
 
             {(type === 'medicament' || type === 'consumable') && (
                 <div className="relative">
@@ -262,11 +262,11 @@ export const MedicamentModal: React.FC<InventoryItemModalProps> = ({
 
             {type === 'equipment' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input 
+                    <Input
                         label={t('serialNumber')}
                         value={serialNumber}
                         onChange={e => setSerialNumber(e.target.value)}
-                        placeholder="SN-123456"
+                        placeholder={t('placeholderSerialNumber')}
                     />
                     <div className="relative">
                         <label className="block text-xs font-semibold text-surface-700 dark:text-surface-300 uppercase tracking-wider mb-1.5">
@@ -293,7 +293,7 @@ export const MedicamentModal: React.FC<InventoryItemModalProps> = ({
                             value={supplier}
                             onChange={e => setSupplier(e.target.value)}
                         >
-                            <option value="">Select Supplier...</option>
+                            <option value="">{t('selectSupplier')}</option>
                             {suppliers.map(s => (
                                 <option key={s.id} value={s.name}>{s.name}</option>
                             ))}
@@ -312,9 +312,9 @@ export const MedicamentModal: React.FC<InventoryItemModalProps> = ({
                 </label>
                 <div className="relative">
                     <FileText size={16} className="absolute left-3 top-3 text-surface-400" />
-                    <textarea 
+                    <textarea
                         className="w-full pl-10 px-3 py-2 rounded-xl border border-surface-300 dark:border-surface-600 bg-white dark:bg-surface-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[80px]"
-                        placeholder="Optional details..."
+                        placeholder={t('optionalDetails')}
                         value={description}
                         onChange={e => setDescription(e.target.value)}
                     />

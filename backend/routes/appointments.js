@@ -15,4 +15,10 @@ router.post('/:id/cancel', asyncHandler(ctrl.cancel));
 router.post('/:id/restore', asyncHandler(ctrl.restore));
 router.post('/cancel-many', asyncHandler(ctrl.cancelMany));
 
+// Waiting-room status transitions
+router.post('/:id/check-in', asyncHandler(ctrl.checkIn));
+router.post('/:id/start', asyncHandler(ctrl.start));
+router.post('/:id/complete', asyncHandler(ctrl.complete));
+router.post('/:id/no-show', asyncHandler(ctrl.noShow));
+
 module.exports = router;

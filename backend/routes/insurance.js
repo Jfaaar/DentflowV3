@@ -1,11 +1,13 @@
 const express = require('express');
 const { authenticateToken } = require('../middleware/auth');
+const { requireFeature } = require('../middleware/featureGuard');
 const { asyncHandler } = require('../utils/asyncHandler');
 const ctrl = require('../controllers/insuranceController');
 
 const router = express.Router();
 
 router.use(authenticateToken);
+router.use(requireFeature('insurance'));
 
 // Providers
 router.get('/providers', asyncHandler(ctrl.listProviders));
