@@ -30,8 +30,12 @@ export const TreatmentFormModal: React.FC<TreatmentFormModalProps> = ({
   initialSurface
 }) => {
   const { t } = useLanguage();
-  const { has } = useClinicSpecialty();
-  const isDental = has('dental');
+  const { profile } = useClinicSpecialty();
+  // Tooth/surface fields belong on a treatment plan only when this clinic's
+  // primary specialty is dental (its layout profile uses the odontogram).
+  // A clinic that merely has dental as a secondary specialty gets the
+  // generic body-region selector instead.
+  const isDental = profile.primaryChart === 'dentalChart';
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [tooth, setTooth] = useState('');
   const [surface, setSurface] = useState('');
