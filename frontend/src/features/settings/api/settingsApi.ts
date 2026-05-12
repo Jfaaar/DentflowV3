@@ -43,7 +43,13 @@ export const settingsApi = baseApi.injectEndpoints({
     updateSettings: build.mutation<ClinicSettings, Partial<ClinicSettings>>({
       query: (body) => ({ url: 'settings', method: 'PUT', body }),
       transformResponse: (r: { data: ClinicSettings }) => r.data,
-      invalidatesTags: [{ type: 'Settings', id: 'CURRENT' }],
+      // Changing primary_specialty / enabled_specialties shifts which features
+      // are auto-enabled, so the features list must refetch — otherwise the
+      // sidebar, Features page and feature-gated UI stay stale until a reload.
+      invalidatesTags: [
+        { type: 'Settings', id: 'CURRENT' },
+        { type: 'Feature', id: 'LIST' },
+      ],
     }),
   }),
 });
