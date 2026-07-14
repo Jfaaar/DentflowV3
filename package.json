@@ -13,6 +13,7 @@
   "scripts": {
     "dev": "concurrently -n frontend,backend -c blue,green \"npm:dev -w frontend\" \"npm:dev -w backend\"",
     "build": "npm run build -w frontend",
+    "screenshots": "node scripts/capture-screenshots.mjs",
     "preview": "npm run preview -w frontend",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
