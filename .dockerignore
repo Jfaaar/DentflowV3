@@ -1,0 +1,37 @@
+# Keep the API image small and free of anything frontend-only.
+# The build context is the repo root (see Dockerfile).
+
+node_modules
+**/node_modules
+
+.git
+.github
+.claude
+
+# The frontend ships as a static site elsewhere. Its manifest must survive,
+# though: npm needs every workspace's package.json to resolve the lockfile.
+frontend/*
+!frontend/package.json
+
+# Tooling, docs and local artefacts the server never reads.
+scripts
+docs
+ci-pending
+*.md
+docker-compose.yml
+vercel.json
+netlify.toml
+
+# Local/dev only.
+.env
+.env.*
+**/.env.local
+**/.env.test
+backend/uploads
+backend/__tests__
+backend/**/*.test.js
+
+# 3.8 MB drug catalogue. It is not committed to git anyway, so it would not be
+# in the build context on Back4App — the backend skips the import when the file
+# is absent. Import it once against the remote DB instead (see DEPLOY.md).
+medicaments data
