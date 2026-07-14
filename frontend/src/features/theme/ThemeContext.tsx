@@ -10,15 +10,14 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>('light');
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('medineeo_theme') as Theme;
-    if (savedTheme) {
-      setTheme(savedTheme);
-    }
-    // Removed system preference check (window.matchMedia) to force Light Mode by default
-  }, []);
+  // Read the saved theme during the first render, not in an effect: an effect
+  // that reads localStorage races the effect below that writes it, and under
+  // StrictMode's double-invoke the write lands first — clobbering the saved
+  // preference with the initial 'light' before it is ever read.
+  // No system-preference check: light is the default.
+  const [theme, setTheme] = useState<Theme>(
+    () => (localStorage.getItem('medineeo_theme') as Theme | null) ?? 'light',
+  );
 
   useEffect(() => {
     const root = window.document.documentElement;

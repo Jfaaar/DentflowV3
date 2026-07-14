@@ -30,8 +30,12 @@ export const useLanguage = () => {
   };
 
   // Preserve the legacy strict typing: `t(key)` accepts a known key from
-  // translations.en.
-  const t = (key: keyof typeof translations['en']): string => tRaw(key as string);
+  // translations.en. The optional second argument carries interpolation values
+  // for keys containing {{placeholders}}.
+  const t = (
+    key: keyof typeof translations['en'],
+    vars?: Record<string, string | number>,
+  ): string => tRaw(key as string, vars as never) as unknown as string;
 
   return { language, setLanguage, t, dir };
 };
