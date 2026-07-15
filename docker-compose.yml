@@ -1,0 +1,72 @@
+# Local data tier for Dentflow dev. Frontend + backend keep running on
+# the host with `npm run dev`; this compose file only stands up Postgres
+# and pgAdmin.
+#
+#   docker compose up -d           # start postgres + pgadmin
+#   docker compose down            # stop both, keep data volume
+#   docker compose down -v         # nuke schema + data, fresh start
+#
+# Postgres applies init files in /docker-entrypoint-initdb.d ONCE — only
+# on a virgin volume. Migration order is enforced by filename prefix.
+# (No 0004 — that slot was Supabase Storage and was retired with the
+# Supabase removal.)
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: dentflow-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dentflow
+      POSTGRES_PASSWORD: dentflow
+      POSTGRES_DB: dentflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - dentflow_pg_data:/var/lib/postgresql/data
+      # Init files (run alphabetically on a fresh volume).
+      # `00_local_stubs.sql` runs first to create the auth schema stubs
+      # the migrations depend on. Then 0000-0007 from db/migrations/, and
+      # `99_dev_seed.sql` last to insert the dev clinic + demo user.
+      - ./backend/db/init/00_local_stubs.sql:/docker-entrypoint-initdb.d/00_local_stubs.sql:ro
+      - ./backend/db/migrations/0000_bootstrap.sql:/docker-entrypoint-initdb.d/01_bootstrap.sql:ro
+      - ./backend/db/migrations/0001_core_extensions_and_helpers.sql:/docker-entrypoint-initdb.d/10_core_extensions.sql:ro
+      - ./backend/db/migrations/0002_clinical_tables.sql:/docker-entrypoint-initdb.d/20_clinical_tables.sql:ro
+      - ./backend/db/migrations/0003_rls_policies.sql:/docker-entrypoint-initdb.d/30_rls_policies.sql:ro
+      - ./backend/db/migrations/0005_invoice_status_trigger.sql:/docker-entrypoint-initdb.d/50_invoice_trigger.sql:ro
+      - ./backend/db/migrations/0006_notification_templates_seed.sql:/docker-entrypoint-initdb.d/60_notification_templates.sql:ro
+      - ./backend/db/migrations/0007_clinical_locks_and_triggers.sql:/docker-entrypoint-initdb.d/70_clinical_locks.sql:ro
+      - ./backend/db/migrations/0008_medical_mvp.sql:/docker-entrypoint-initdb.d/80_medical_mvp.sql:ro
+      - ./backend/db/migrations/0009_ammps_catalog.sql:/docker-entrypoint-initdb.d/90_ammps_catalog.sql:ro
+      - ./backend/db/migrations/0010_treatment_plans_notes.sql:/docker-entrypoint-initdb.d/91_plan_notes.sql:ro
+      - ./backend/db/init/99_dev_seed.sql:/docker-entrypoint-initdb.d/99_dev_seed.sql:ro
+      - ./backend/db/init/99c_dev_seed_rich.sql:/docker-entrypoint-initdb.d/99c_dev_seed_rich.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dentflow -d dentflow"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: dentflow-pgadmin
+    restart: unless-stopped
+    environment:
+      # pgAdmin v8+ rejects .local TLDs in DEFAULT_EMAIL — use .com here.
+      PGADMIN_DEFAULT_EMAIL: dev@dentflow.com
+      PGADMIN_DEFAULT_PASSWORD: dentflow
+      # Single-user mode — no login screen; opens directly into the UI.
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "5050:80"
+    volumes:
+      - dentflow_pgadmin_data:/var/lib/pgadmin
+      - ./backend/db/init/pgadmin-servers.json:/pgadmin4/servers.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  dentflow_pg_data:
+  dentflow_pgadmin_data:

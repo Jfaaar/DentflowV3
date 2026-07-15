@@ -1,0 +1,12 @@
+# Frontend only — the API is a container on Back4App (see DEPLOY.md).
+
+[build]
+  command = "npm run build"
+  publish = "frontend/dist"
+
+# The app is a client-side SPA: every route must be served index.html, or a
+# deep link like /app/patients 404s on refresh. Keep this last.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

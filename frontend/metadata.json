@@ -1,0 +1,5 @@
+{
+  "name": "MediNEEO - Medical Clinic Management",
+  "description": "A modern, SaaS-style dashboard for multi-specialty medical clinic management featuring appointment scheduling, patient records, vitals, problem list, vaccinations, and calendar workflows.",
+  "requestFramePermissions": []
+}

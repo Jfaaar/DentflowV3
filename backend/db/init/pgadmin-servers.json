@@ -1,0 +1,13 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Dentflow Local",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "dentflow",
+      "Username": "dentflow",
+      "SSLMode": "prefer"
+    }
+  }
+}
