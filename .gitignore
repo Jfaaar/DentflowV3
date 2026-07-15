@@ -28,3 +28,7 @@ playwright/.cache/
 *.sln
 *.sw?
 .claude/
+
+# 3.8 MB drug-catalogue dump — imported into Postgres, not source code.
+# See DEPLOY.md for how to load it into a deployed database.
+medicaments data/

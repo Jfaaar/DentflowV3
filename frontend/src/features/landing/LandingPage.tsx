@@ -43,18 +43,11 @@ import { useLanguage, type LanguageCode } from '../language/LanguageContext';
 import { BRAND } from '../../lib/brand';
 import { cn } from '../../lib/utils';
 import { ROUTES } from '../../shared/constants/routes';
-import {
-  MockBillCard,
-  MockBookCard,
-  MockCalendarMonth,
-  MockDashboard,
-  MockInvoices,
-  MockPatientChart,
-  MockPrescribeCard,
-  MockPrescription,
-  MockSeeCard,
-  MockStock,
-} from './MockUI';
+import { Screenshot } from './Screenshot';
+import { getLandingCopy } from './copy';
+
+/** The landing page is public, so its copy comes from ./copy rather than t(). */
+const useCopy = () => getLandingCopy(useLanguage().language);
 
 // ─── Hooks ───────────────────────────────────────────────────────────────────
 
@@ -255,13 +248,7 @@ const BrowserFrame: React.FC<BrowserFrameProps> = ({
 
 // ─── Top nav ─────────────────────────────────────────────────────────────────
 
-const NAV_LINKS = [
-  { id: 'product', label: 'Product' },
-  { id: 'workflow', label: 'Workflow' },
-  { id: 'security', label: 'Security' },
-  { id: 'pricing', label: 'Pricing' },
-  { id: 'faq', label: 'FAQ' },
-] as const;
+const NAV_IDS = ['product', 'workflow', 'security', 'pricing', 'faq'] as const;
 
 const LANGUAGE_OPTIONS: { code: LanguageCode; label: string; short: string }[] = [
   { code: 'en', label: 'English', short: 'EN' },
@@ -323,11 +310,12 @@ const LangSwitcher: React.FC = () => {
 
 const ThemeToggle: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
+  const copy = useCopy();
   const isDark = theme === 'dark';
   return (
     <button
       onClick={toggleTheme}
-      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      aria-label={isDark ? copy.a11y.switchToLight : copy.a11y.switchToDark}
       className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-surface-600 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
     >
       {isDark ? <Sun size={16} /> : <Moon size={16} />}
@@ -336,7 +324,8 @@ const ThemeToggle: React.FC = () => {
 };
 
 const TopNav: React.FC = () => {
-  const ids = useMemo(() => NAV_LINKS.map((n) => n.id), []);
+  const copy = useCopy();
+  const ids = useMemo(() => [...NAV_IDS], []);
   const active = useScrollSpy(ids);
   const scrolled = useScrolled(8);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -360,23 +349,23 @@ const TopNav: React.FC = () => {
       )}
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
-        <a href="#top" className="flex items-center" aria-label={`${BRAND.NAME} home`}>
+        <a href="#top" className="flex items-center" aria-label={copy.a11y.home}>
           <Logo size="md" />
         </a>
 
         <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
-          {NAV_LINKS.map((l) => (
+          {NAV_IDS.map((id) => (
             <a
-              key={l.id}
-              href={`#${l.id}`}
+              key={id}
+              href={`#${id}`}
               className={cn(
                 'px-3 py-2 rounded-lg transition-colors',
-                active === l.id
+                active === id
                   ? 'text-primary-700 dark:text-primary-300 bg-primary-50/80 dark:bg-primary-900/30'
                   : 'text-surface-600 dark:text-surface-300 hover:text-primary-700 dark:hover:text-primary-300 hover:bg-surface-100/70 dark:hover:bg-surface-800/60',
               )}
             >
-              {l.label}
+              {copy.nav[id]}
             </a>
           ))}
         </nav>
@@ -388,17 +377,17 @@ const TopNav: React.FC = () => {
           </div>
           <Link to={ROUTES.auth.login} className="hidden sm:block">
             <Button variant="ghost" size="md">
-              Sign in
+              {copy.actions.signIn}
             </Button>
           </Link>
           <Link to={ROUTES.auth.register} className="hidden sm:block">
             <Button variant="gradient" size="md">
-              Start free trial
+              {copy.actions.startFreeTrial}
             </Button>
           </Link>
           <button
             onClick={() => setMobileOpen((s) => !s)}
-            aria-label="Toggle menu"
+            aria-label={copy.a11y.toggleMenu}
             aria-expanded={mobileOpen}
             className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800"
           >
@@ -415,19 +404,19 @@ const TopNav: React.FC = () => {
         )}
       >
         <div className="px-6 pb-6 pt-2 space-y-1 bg-white/95 dark:bg-surface-950/95 backdrop-blur-md border-b border-surface-200 dark:border-surface-800">
-          {NAV_LINKS.map((l) => (
+          {NAV_IDS.map((id) => (
             <a
-              key={l.id}
-              href={`#${l.id}`}
+              key={id}
+              href={`#${id}`}
               onClick={() => setMobileOpen(false)}
               className={cn(
                 'block px-3 py-2.5 rounded-lg text-base font-medium',
-                active === l.id
+                active === id
                   ? 'text-primary-700 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30'
                   : 'text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800',
               )}
             >
-              {l.label}
+              {copy.nav[id]}
             </a>
           ))}
           <div className="pt-3 mt-2 border-t border-surface-200 dark:border-surface-800 flex items-center justify-between">
@@ -439,12 +428,12 @@ const TopNav: React.FC = () => {
           <div className="grid grid-cols-2 gap-2 pt-2">
             <Link to={ROUTES.auth.login} onClick={() => setMobileOpen(false)}>
               <Button variant="outline" size="md" className="w-full">
-                Sign in
+                {copy.actions.signIn}
               </Button>
             </Link>
             <Link to={ROUTES.auth.register} onClick={() => setMobileOpen(false)}>
               <Button variant="gradient" size="md" className="w-full">
-                Start free
+                {copy.actions.startFree}
               </Button>
             </Link>
           </div>
@@ -490,22 +479,23 @@ const useTilt = (max = 6) => {
   return ref;
 };
 
+// Numbers only — the labels are translated, see copy.hero.stats.
 const HERO_STATS: Array<{
   end?: number;
   decimals?: number;
   suffix?: string;
   prefix?: string;
   text?: string;
-  label: string;
 }> = [
-  { end: 16, suffix: '+', label: 'Integrated modules' },
-  { end: 5, label: 'Languages' },
-  { end: 99.9, decimals: 1, suffix: '%', label: 'Target uptime' },
-  { text: 'HIPAA', label: 'Aligned encryption' },
+  { end: 16, suffix: '+' },
+  { end: 5 },
+  { end: 99.9, decimals: 1, suffix: '%' },
+  { text: 'HIPAA' },
 ];
 
 const Hero: React.FC = () => {
   const tiltRef = useTilt(5);
+  const copy = useCopy();
   return (
     <section id="top" className="relative overflow-hidden pt-8">
       <span
@@ -525,22 +515,20 @@ const Hero: React.FC = () => {
           <div className="lg:col-span-6 animate-blur-in">
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/70 dark:bg-surface-900/70 border border-primary-200/70 dark:border-primary-800/70 text-xs font-medium text-primary-700 dark:text-primary-300 backdrop-blur-sm">
               <Sparkles size={12} />
-              The all-in-one platform for medical clinics
+              {copy.hero.badge}
             </span>
             <h1 className="mt-5 font-display text-4xl md:text-5xl lg:text-[3.5rem] font-bold tracking-tight text-surface-900 dark:text-white leading-[1.05]">
-              Run a modern clinic
-              <span className="block gradient-text">without the busywork.</span>
+              {copy.hero.titleTop}
+              <span className="block gradient-text">{copy.hero.titleAccent}</span>
             </h1>
             <p className="mt-6 text-lg text-surface-600 dark:text-surface-300 leading-relaxed max-w-xl">
-              {BRAND.NAME} is the operating system for multi-specialty clinics —
-              appointments, clinical records, prescriptions, billing, and stock in one secure,
-              multi-language platform.
+              {copy.hero.subtitle}
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <Link to={ROUTES.auth.register}>
                 <Button variant="gradient" size="lg" className="w-full sm:w-auto group">
-                  Start your free trial
+                  {copy.hero.ctaPrimary}
                   <ArrowRight
                     size={18}
                     className="ms-2 transition-transform group-hover:translate-x-0.5"
@@ -550,24 +538,18 @@ const Hero: React.FC = () => {
               <a href="#product">
                 <Button variant="outline" size="lg" className="w-full sm:w-auto">
                   <PlayCircle size={18} className="me-2" />
-                  See it in action
+                  {copy.hero.ctaSecondary}
                 </Button>
               </a>
             </div>
 
             <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-surface-500 dark:text-surface-400">
-              <span className="inline-flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-accent-600" />
-                No credit card
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-accent-600" />
-                14-day trial
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-accent-600" />
-                Setup in &lt; 1 day
-              </span>
+              {copy.hero.bullets.map((b) => (
+                <span key={b} className="inline-flex items-center gap-2">
+                  <CheckCircle2 size={16} className="text-accent-600" />
+                  {b}
+                </span>
+              ))}
             </div>
           </div>
 
@@ -583,7 +565,11 @@ const Hero: React.FC = () => {
                 className="relative will-change-transform transition-transform duration-200 ease-out"
               >
                 <BrowserFrame className="animate-blur-in">
-                  <MockDashboard />
+                  <Screenshot
+                    name="dashboard"
+                    alt="MediNEEO dashboard — today’s revenue, appointments, agenda and cabinet alerts"
+                    priority
+                  />
                 </BrowserFrame>
               </div>
 
@@ -593,10 +579,10 @@ const Hero: React.FC = () => {
                 </div>
                 <div>
                   <div className="text-xs uppercase tracking-wide text-surface-500 dark:text-surface-400 font-medium">
-                    Today
+                    {copy.hero.todayLabel}
                   </div>
                   <div className="font-semibold text-surface-900 dark:text-white">
-                    12 appointments
+                    {copy.hero.todayValue}
                   </div>
                 </div>
               </div>
@@ -610,10 +596,10 @@ const Hero: React.FC = () => {
                 </div>
                 <div>
                   <div className="text-xs uppercase tracking-wide text-surface-500 dark:text-surface-400 font-medium">
-                    Low stock
+                    {copy.hero.lowStockLabel}
                   </div>
                   <div className="font-semibold text-surface-900 dark:text-white">
-                    Surgical gloves (M)
+                    {copy.hero.lowStockValue}
                   </div>
                 </div>
               </div>
@@ -624,9 +610,9 @@ const Hero: React.FC = () => {
         {/* Stats strip */}
         <Reveal className="mt-24" delay={150}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto">
-            {HERO_STATS.map((s) => (
+            {HERO_STATS.map((s, i) => (
               <div
-                key={s.label}
+                key={copy.hero.stats[i]}
                 className="p-5 rounded-2xl bg-white/80 dark:bg-surface-900/60 border border-surface-200/70 dark:border-surface-800/70 backdrop-blur-sm shadow-soft text-center hover:shadow-elevated hover:-translate-y-0.5 transition-all"
               >
                 <div className="font-display text-3xl font-bold gradient-text">
@@ -640,7 +626,7 @@ const Hero: React.FC = () => {
                   )}
                 </div>
                 <div className="mt-1 text-xs uppercase tracking-wide text-surface-500 dark:text-surface-400 font-medium">
-                  {s.label}
+                  {copy.hero.stats[i]}
                 </div>
               </div>
             ))}
@@ -664,11 +650,13 @@ const TRUST_CITIES = [
   'Oujda',
 ];
 
-const TrustedBy: React.FC = () => (
+const TrustedBy: React.FC = () => {
+  const copy = useCopy();
+  return (
   <section className="relative py-12 border-y border-surface-200 dark:border-surface-800/60 bg-surface-50/60 dark:bg-surface-900/30">
     <div className="max-w-7xl mx-auto px-6 lg:px-10 flex flex-col gap-5">
       <p className="text-sm font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider text-center">
-        Trusted by clinics across Morocco and beyond
+        {copy.trustedBy}
       </p>
       <div
         className="relative overflow-hidden"
@@ -692,88 +680,42 @@ const TrustedBy: React.FC = () => (
       </div>
     </div>
   </section>
-);
+  );
+};
 
 // ─── Interactive product showcase ────────────────────────────────────────────
 
+// Structure only — labels, titles, bodies and alt text are translated, see
+// copy.showcase.tabs.
 const SHOWCASE_TABS = [
-  {
-    id: 'dashboard',
-    label: 'Dashboard',
-    icon: Activity,
-    url: 'app.medineeo.com/dashboard',
-    title: 'A control room for your clinic.',
-    body: 'Today’s revenue, appointments, alerts, and quick actions — a single screen the whole team starts the day with.',
-    Mock: MockDashboard,
-  },
-  {
-    id: 'patient',
-    label: 'Patients',
-    icon: Users,
-    url: 'app.medineeo.com/patients/sami-pediatric',
-    title: 'Every chart in one tab.',
-    body: 'Treatments, prescriptions, vitals, problems, vaccinations, billing, radiology — unified per patient with audit-grade signed notes.',
-    Mock: MockPatientChart,
-  },
-  {
-    id: 'calendar',
-    label: 'Calendar',
-    icon: CalendarClock,
-    url: 'app.medineeo.com/calendar',
-    title: 'Smart scheduling.',
-    body: 'Drag-to-reschedule, cross-staff and per-room views, conflict detection, and a glanceable monthly heatmap.',
-    Mock: MockCalendarMonth,
-  },
-  {
-    id: 'inventory',
-    label: 'Inventory',
-    icon: Package,
-    url: 'app.medineeo.com/inventory',
-    title: 'Stock control with AMMPS sync.',
-    body: 'Track every consumable, drug, and material with low-stock alerts and direct sync from the official medicament catalog.',
-    Mock: MockStock,
-  },
-  {
-    id: 'prescriptions',
-    label: 'Prescriptions',
-    icon: Pill,
-    url: 'app.medineeo.com/prescriptions',
-    title: 'Build, preview, print Rx.',
-    body: 'Searchable medicaments, stock-aware dosing, live preview, and a clean branded printout in seconds.',
-    Mock: MockPrescription,
-  },
-  {
-    id: 'invoices',
-    label: 'Invoices',
-    icon: ReceiptText,
-    url: 'app.medineeo.com/invoices',
-    title: 'Invoices, payments, claims — automated.',
-    body: 'Invoice status flips automatically as payments come in. Track AR in real time and file insurance claims from the same view.',
-    Mock: MockInvoices,
-  },
+  { id: 'dashboard', icon: Activity, url: 'app.medineeo.com/dashboard', shot: 'dashboard' },
+  { id: 'patient', icon: Users, url: 'app.medineeo.com/patients/yasmine-alaoui', shot: 'patient-overview' },
+  { id: 'calendar', icon: CalendarClock, url: 'app.medineeo.com/calendar', shot: 'calendar-month' },
+  { id: 'inventory', icon: Package, url: 'app.medineeo.com/inventory', shot: 'stock' },
+  { id: 'prescriptions', icon: Pill, url: 'app.medineeo.com/prescriptions', shot: 'prescription-modal' },
+  { id: 'invoices', icon: ReceiptText, url: 'app.medineeo.com/invoices', shot: 'invoices' },
 ] as const;
 
 const ProductShowcase: React.FC = () => {
+  const copy = useCopy();
   const [active, setActive] = useState<(typeof SHOWCASE_TABS)[number]['id']>(
     'dashboard',
   );
-  const current =
-    SHOWCASE_TABS.find((t) => t.id === active) ?? SHOWCASE_TABS[0];
+  const current = SHOWCASE_TABS.find((t) => t.id === active) ?? SHOWCASE_TABS[0];
+  const text = copy.showcase.tabs[current.id];
   return (
     <section id="product" className="relative py-24 lg:py-32 scroll-mt-20">
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
         <Reveal>
           <div className="max-w-2xl">
             <span className="text-xs font-semibold uppercase tracking-wider text-primary-600 dark:text-primary-400">
-              See it in action
+              {copy.showcase.eyebrow}
             </span>
             <h2 className="mt-3 font-display text-3xl md:text-4xl font-bold tracking-tight text-surface-900 dark:text-white">
-              One platform. Sixteen modules. Zero context-switching.
+              {copy.showcase.title}
             </h2>
             <p className="mt-4 text-lg text-surface-600 dark:text-surface-300">
-              Stop stitching together booking apps, billing tools, and paper charts.{' '}
-              {BRAND.NAME} ties every part of clinic operations together so your team works
-              from a single source of truth.
+              {copy.showcase.subtitle}
             </p>
           </div>
         </Reveal>
@@ -782,7 +724,7 @@ const ProductShowcase: React.FC = () => {
         <Reveal delay={100} className="mt-10">
           <div
             role="tablist"
-            aria-label="Product modules"
+            aria-label={copy.a11y.productModules}
             className="flex gap-1.5 overflow-x-auto pb-2 -mx-6 px-6 lg:mx-0 lg:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {SHOWCASE_TABS.map((t) => {
@@ -802,7 +744,7 @@ const ProductShowcase: React.FC = () => {
                   )}
                 >
                   <Icon size={15} />
-                  {t.label}
+                  {copy.showcase.tabs[t.id].label}
                 </button>
               );
             })}
@@ -814,17 +756,13 @@ const ProductShowcase: React.FC = () => {
           <div className="grid lg:grid-cols-12 gap-8 items-start">
             <div className="lg:col-span-5">
               <h3 className="font-display text-2xl font-bold text-surface-900 dark:text-white">
-                {current.title}
+                {text.title}
               </h3>
               <p className="mt-3 text-surface-600 dark:text-surface-300 leading-relaxed">
-                {current.body}
+                {text.body}
               </p>
               <ul className="mt-6 space-y-2.5">
-                {[
-                  'Role-aware permissions across the team',
-                  'Multi-language UI (FR · EN · AR · ES · DE)',
-                  'Built for desktop, tablet, and mobile',
-                ].map((f) => (
+                {copy.showcase.bullets.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm text-surface-700 dark:text-surface-200">
                     <CheckCircle2
                       size={16}
@@ -841,7 +779,7 @@ const ProductShowcase: React.FC = () => {
                 className="animate-blur-in"
               >
                 <BrowserFrame url={current.url}>
-                  <current.Mock />
+                  <Screenshot name={current.shot} alt={text.alt} />
                 </BrowserFrame>
               </div>
             </div>
@@ -854,38 +792,17 @@ const ProductShowcase: React.FC = () => {
 
 // ─── Workflow stepper (interactive) ──────────────────────────────────────────
 
+// Structure only — titles, bodies and alt text are translated, see
+// copy.workflow.steps.
 const WORKFLOW = [
-  {
-    step: '01',
-    title: 'Book',
-    body: 'Drag-and-drop calendar with conflict detection and patient search.',
-    Mock: MockBookCard,
-    color: 'from-primary-500 to-primary-700',
-  },
-  {
-    step: '02',
-    title: 'See',
-    body: 'Pull up the patient chart in one click — vitals, history, allergies.',
-    Mock: MockSeeCard,
-    color: 'from-accent-500 to-accent-700',
-  },
-  {
-    step: '03',
-    title: 'Prescribe',
-    body: 'Search the AMMPS catalog, build the Rx, print or share digitally.',
-    Mock: MockPrescribeCard,
-    color: 'from-primary-500 to-accent-500',
-  },
-  {
-    step: '04',
-    title: 'Bill',
-    body: 'Generate the invoice, take payment, file the insurance claim.',
-    Mock: MockBillCard,
-    color: 'from-amber-500 to-amber-600',
-  },
+  { step: '01', key: 'book', shot: 'appointment-modal', color: 'from-primary-500 to-primary-700' },
+  { step: '02', key: 'see', shot: 'patient-vitals', color: 'from-accent-500 to-accent-700' },
+  { step: '03', key: 'prescribe', shot: 'prescription-modal', color: 'from-primary-500 to-accent-500' },
+  { step: '04', key: 'bill', shot: 'patient-billing', color: 'from-amber-500 to-amber-600' },
 ] as const;
 
 const Workflow: React.FC = () => {
+  const copy = useCopy();
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   const reduced = usePrefersReducedMotion();
@@ -900,6 +817,7 @@ const Workflow: React.FC = () => {
   }, [paused, reduced]);
 
   const current = WORKFLOW[active];
+  const currentText = copy.workflow.steps[current.key];
 
   return (
     <section
@@ -910,14 +828,13 @@ const Workflow: React.FC = () => {
         <Reveal>
           <div className="max-w-2xl">
             <span className="text-xs font-semibold uppercase tracking-wider text-primary-600 dark:text-primary-400">
-              A day in your clinic
+              {copy.workflow.eyebrow}
             </span>
             <h2 className="mt-3 font-display text-3xl md:text-4xl font-bold tracking-tight text-surface-900 dark:text-white">
-              Book → See → Prescribe → Bill.
+              {copy.workflow.title}
             </h2>
             <p className="mt-4 text-lg text-surface-600 dark:text-surface-300">
-              The four moments that define every patient visit, designed to flow into each
-              other without leaving the platform.
+              {copy.workflow.subtitle}
             </p>
           </div>
         </Reveal>
@@ -955,10 +872,10 @@ const Workflow: React.FC = () => {
                     </div>
                     <div className="flex-1">
                       <div className="font-display text-lg font-semibold text-surface-900 dark:text-white">
-                        {w.title}
+                        {copy.workflow.steps[w.key].title}
                       </div>
                       <p className="mt-1 text-sm text-surface-600 dark:text-surface-400">
-                        {w.body}
+                        {copy.workflow.steps[w.key].body}
                       </p>
                       {/* Progress bar (only on active, when auto-advancing) */}
                       {isActive && !paused && !reduced && (
@@ -990,8 +907,8 @@ const Workflow: React.FC = () => {
                 className="absolute -inset-4 bg-gradient-to-tr from-primary-500/15 to-accent-400/10 blur-2xl rounded-3xl"
               />
               <div key={current.step} className="relative animate-blur-in">
-                <BrowserFrame url={`app.medineeo.com/${current.title.toLowerCase()}`}>
-                  <current.Mock />
+                <BrowserFrame url={`app.medineeo.com/${current.key}`}>
+                  <Screenshot name={current.shot} alt={currentText.alt} />
                 </BrowserFrame>
               </div>
             </div>
@@ -1004,65 +921,37 @@ const Workflow: React.FC = () => {
 
 // ─── Feature grid ────────────────────────────────────────────────────────────
 
-const FEATURES = [
-  {
-    icon: Users,
-    title: 'Patient management',
-    body: 'Unified records — demographics, history, allergies, contacts, documents.',
-  },
-  {
-    icon: CalendarClock,
-    title: 'Smart scheduling',
-    body: 'Conflict detection, drag-to-reschedule, cross-staff and per-room views.',
-  },
-  {
-    icon: ClipboardList,
-    title: 'Clinical records',
-    body: 'Notes, vitals, problem list, dental chart — every change auditable.',
-  },
-  {
-    icon: ReceiptText,
-    title: 'Billing & insurance',
-    body: 'Invoices and payments with auto-status, plus claims management.',
-  },
-  {
-    icon: Package,
-    title: 'Inventory & catalog',
-    body: 'Stock control, supplier orders, AMMPS drug catalog at your fingertips.',
-  },
-  {
-    icon: Pill,
-    title: 'Treatments & Rx',
-    body: 'Plans, quotes, e-prescriptions linked to your medicaments database.',
-  },
-] as const;
+// Icons only — titles and bodies are translated, see copy.features.items.
+const FEATURES = [Users, CalendarClock, ClipboardList, ReceiptText, Package, Pill] as const;
 
-const FeatureGrid: React.FC = () => (
+const FeatureGrid: React.FC = () => {
+  const copy = useCopy();
+  return (
   <section className="relative py-24 lg:py-32">
     <div className="max-w-7xl mx-auto px-6 lg:px-10">
       <Reveal>
         <div className="max-w-2xl">
           <span className="text-xs font-semibold uppercase tracking-wider text-primary-600 dark:text-primary-400">
-            Everything in one place
+            {copy.features.eyebrow}
           </span>
           <h2 className="mt-3 font-display text-3xl md:text-4xl font-bold tracking-tight text-surface-900 dark:text-white">
-            Every module your clinic needs.
+            {copy.features.title}
           </h2>
         </div>
       </Reveal>
 
       <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {FEATURES.map(({ icon: Icon, title, body }, i) => (
-          <Reveal key={title} delay={i * 60}>
+        {FEATURES.map((Icon, i) => (
+          <Reveal key={copy.features.items[i].title} delay={i * 60}>
             <div className="group h-full p-6 rounded-2xl bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-800 hover:border-primary-300 dark:hover:border-primary-700 hover:shadow-elevated hover:-translate-y-0.5 transition-all duration-300">
               <div className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-glow group-hover:scale-105 transition-transform">
                 <Icon size={20} />
               </div>
               <h3 className="mt-5 font-display text-lg font-semibold text-surface-900 dark:text-white">
-                {title}
+                {copy.features.items[i].title}
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-surface-600 dark:text-surface-400">
-                {body}
+                {copy.features.items[i].body}
               </p>
             </div>
           </Reveal>
@@ -1070,58 +959,45 @@ const FeatureGrid: React.FC = () => (
       </div>
     </div>
   </section>
-);
+  );
+};
 
 // ─── Audience ────────────────────────────────────────────────────────────────
 
-const AUDIENCE = [
-  {
-    icon: Stethoscope,
-    title: 'Doctors',
-    body: 'Spend more time with patients. Pull a chart in one click, sign notes from any device, prescribe in seconds.',
-  },
-  {
-    icon: HeartPulse,
-    title: 'Clinic admins',
-    body: 'See revenue, occupancy, and stock in real time. Manage staff, roles, and clinics from one backoffice.',
-  },
-  {
-    icon: Users,
-    title: 'Assistants',
-    body: 'Daily workflows that just work — booking, check-in, billing — built for the way clinic teams operate.',
-  },
-] as const;
+// Icons only — see copy.audience.items.
+const AUDIENCE = [Stethoscope, HeartPulse, Users] as const;
 
-const Audience: React.FC = () => (
+const Audience: React.FC = () => {
+  const copy = useCopy();
+  return (
   <section className="relative py-24 lg:py-28 bg-surface-50/80 dark:bg-surface-900/40 border-y border-surface-200/70 dark:border-surface-800/70">
     <div className="max-w-7xl mx-auto px-6 lg:px-10">
       <Reveal>
         <div className="max-w-2xl mx-auto text-center">
           <span className="text-xs font-semibold uppercase tracking-wider text-primary-600 dark:text-primary-400">
-            Built for clinic teams
+            {copy.audience.eyebrow}
           </span>
           <h2 className="mt-3 font-display text-3xl md:text-4xl font-bold tracking-tight text-surface-900 dark:text-white">
-            Designed for everyone in the clinic.
+            {copy.audience.title}
           </h2>
           <p className="mt-4 text-lg text-surface-600 dark:text-surface-300">
-            Role-aware permissions and tailored dashboards mean each person sees exactly what
-            they need — and nothing they don’t.
+            {copy.audience.subtitle}
           </p>
         </div>
       </Reveal>
 
       <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-5">
-        {AUDIENCE.map(({ icon: Icon, title, body }, i) => (
-          <Reveal key={title} delay={i * 80}>
+        {AUDIENCE.map((Icon, i) => (
+          <Reveal key={copy.audience.items[i].title} delay={i * 80}>
             <div className="h-full p-7 rounded-3xl bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-800 shadow-soft hover:shadow-elevated hover:-translate-y-0.5 transition-all">
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-accent-400 to-accent-600 text-white shadow-glow-accent">
                 <Icon size={22} />
               </div>
               <h3 className="mt-5 font-display text-xl font-semibold text-surface-900 dark:text-white">
-                {title}
+                {copy.audience.items[i].title}
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-surface-600 dark:text-surface-400">
-                {body}
+                {copy.audience.items[i].body}
               </p>
             </div>
           </Reveal>
@@ -1129,113 +1005,77 @@ const Audience: React.FC = () => (
       </div>
     </div>
   </section>
-);
+  );
+};
 
 // ─── Security ────────────────────────────────────────────────────────────────
 
-const TRUST = [
-  {
-    icon: Lock,
-    title: 'Encrypted end-to-end',
-    body: 'TLS in transit, AES-256 at rest. Secrets and tokens never leave your environment.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Role-based access',
-    body: 'Granular permissions: super_admin, clinic_admin, doctor, assistant. Clinics fully isolated.',
-  },
-  {
-    icon: FileText,
-    title: 'Full audit trails',
-    body: 'Every clinical-record change is signed, timestamped, and lock-protected for compliance.',
-  },
-  {
-    icon: Globe,
-    title: 'Data sovereignty',
-    body: 'Self-hostable on your own infrastructure. Your data stays where your regulator wants it.',
-  },
-] as const;
+// Icons only — see copy.security.items.
+const TRUST = [Lock, ShieldCheck, FileText, Globe] as const;
 
-const Security: React.FC = () => (
+const Security: React.FC = () => {
+  const copy = useCopy();
+  return (
   <section id="security" className="relative py-24 lg:py-28 scroll-mt-20">
     <div className="max-w-7xl mx-auto px-6 lg:px-10 grid lg:grid-cols-2 gap-12 items-center">
       <Reveal>
         <div>
           <span className="text-xs font-semibold uppercase tracking-wider text-primary-600 dark:text-primary-400">
-            Security first
+            {copy.security.eyebrow}
           </span>
           <h2 className="mt-3 font-display text-3xl md:text-4xl font-bold tracking-tight text-surface-900 dark:text-white">
-            Healthcare-grade security, by default.
+            {copy.security.title}
           </h2>
           <p className="mt-4 text-lg text-surface-600 dark:text-surface-300">
-            Patient data deserves more than checkbox compliance. {BRAND.NAME} is built on
-            principles you&rsquo;d expect from a hospital information system — encryption,
-            auditability, and clinic isolation enforced at the database layer.
+            {copy.security.body}
           </p>
           <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent-50 dark:bg-accent-900/30 border border-accent-200 dark:border-accent-800 text-sm font-medium text-accent-700 dark:text-accent-300">
             <Zap size={14} />
-            Row-level security enforced at the database layer
+            {copy.security.badge}
           </div>
         </div>
       </Reveal>
       <div className="grid sm:grid-cols-2 gap-4">
-        {TRUST.map(({ icon: Icon, title, body }, i) => (
-          <Reveal key={title} delay={i * 80}>
+        {TRUST.map((Icon, i) => (
+          <Reveal key={copy.security.items[i].title} delay={i * 80}>
             <div className="h-full p-5 rounded-2xl bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-800 hover:border-primary-300 dark:hover:border-primary-700 hover:-translate-y-0.5 transition-all">
               <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-900/40 text-primary-600 dark:text-primary-300">
                 <Icon size={18} />
               </div>
               <h3 className="mt-4 font-display text-base font-semibold text-surface-900 dark:text-white">
-                {title}
+                {copy.security.items[i].title}
               </h3>
-              <p className="mt-1.5 text-sm text-surface-600 dark:text-surface-400">{body}</p>
+              <p className="mt-1.5 text-sm text-surface-600 dark:text-surface-400">
+                {copy.security.items[i].body}
+              </p>
             </div>
           </Reveal>
         ))}
       </div>
     </div>
   </section>
-);
+  );
+};
 
 // ─── Testimonial carousel ────────────────────────────────────────────────────
 
-const TESTIMONIALS = [
-  {
-    quote:
-      'We replaced four different tools with MediNEEO. Booking, charting, billing and stock — all in one place. Our front desk closes the day in half the time.',
-    name: 'Dr. S. Bennani',
-    role: 'Multi-specialty clinic, Casablanca',
-    initials: 'SB',
-  },
-  {
-    quote:
-      'The patient chart is genuinely all-in-one. I can see vitals, prescriptions, and the latest invoice without leaving the page — it changed how I run consultations.',
-    name: 'Dr. Y. Idrissi',
-    role: 'Pediatrics, Rabat',
-    initials: 'YI',
-  },
-  {
-    quote:
-      'Audit trails and role-based access were the deal-breakers for us. MediNEEO ticks every box our compliance team asked for.',
-    name: 'A. El Mansouri',
-    role: 'Operations Director, Marrakech',
-    initials: 'AE',
-  },
-] as const;
+// Testimonials are translated — see copy.testimonials.
 
 const Testimonial: React.FC = () => {
+  const copy = useCopy();
+  const testimonials = copy.testimonials;
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
   const reduced = usePrefersReducedMotion();
   useEffect(() => {
     if (paused || reduced) return;
     const id = window.setInterval(
-      () => setIdx((i) => (i + 1) % TESTIMONIALS.length),
+      () => setIdx((i) => (i + 1) % testimonials.length),
       6500,
     );
     return () => window.clearInterval(id);
-  }, [paused, reduced]);
-  const current = TESTIMONIALS[idx];
+  }, [paused, reduced, testimonials.length]);
+  const current = testimonials[idx];
   return (
     <section className="relative py-20">
       <div className="max-w-4xl mx-auto px-6 lg:px-10">
@@ -1267,11 +1107,11 @@ const Testimonial: React.FC = () => {
 
             {/* Indicators */}
             <div className="relative mt-8 flex items-center gap-2">
-              {TESTIMONIALS.map((t, i) => (
+              {testimonials.map((t, i) => (
                 <button
                   key={t.name}
                   onClick={() => setIdx(i)}
-                  aria-label={`Show testimonial ${i + 1}`}
+                  aria-label={`${copy.a11y.showTestimonial} ${i + 1}`}
                   className={cn(
                     'h-1.5 rounded-full transition-all',
                     i === idx ? 'w-8 bg-white' : 'w-2 bg-white/30 hover:bg-white/50',
@@ -1290,63 +1130,18 @@ const Testimonial: React.FC = () => {
 
 type Billing = 'monthly' | 'annual';
 
-interface Plan {
-  name: string;
-  blurb: string;
-  cta: string;
-  href: string;
-  highlight: boolean;
-  features: readonly string[];
-  monthlyPrice: { value: string; period: string };
-  annualPrice: { value: string; period: string };
-}
 
-const PLANS: readonly Plan[] = [
-  {
-    name: 'Starter',
-    blurb: 'Test every feature with your team. No credit card.',
-    cta: 'Start free trial',
-    href: ROUTES.auth.register,
-    highlight: false,
-    features: ['Up to 3 staff', '1 clinic', 'All clinical modules', 'Email support'],
-    monthlyPrice: { value: 'Free', period: 'for 14 days' },
-    annualPrice: { value: 'Free', period: 'for 14 days' },
-  },
-  {
-    name: 'Clinic',
-    blurb: 'For growing single-site clinics that need the full platform.',
-    cta: 'Get started',
-    href: ROUTES.auth.register,
-    highlight: true,
-    features: [
-      'Unlimited staff',
-      '1 clinic',
-      'Insurance & claims',
-      'AMMPS catalog sync',
-      'Priority support',
-    ],
-    monthlyPrice: { value: '599 DH', period: 'per month' },
-    annualPrice: { value: '479 DH', period: 'per month, billed annually' },
-  },
-  {
-    name: 'Group',
-    blurb: 'Multi-clinic groups with backoffice and consolidated reporting.',
-    cta: 'Talk to sales',
-    href: ROUTES.auth.register,
-    highlight: false,
-    features: [
-      'Unlimited clinics',
-      'Super-admin backoffice',
-      'Cross-clinic analytics',
-      'Self-hosting option',
-      'Dedicated CSM',
-    ],
-    monthlyPrice: { value: 'Custom', period: 'per month' },
-    annualPrice: { value: 'Custom', period: 'per month, billed annually' },
-  },
-];
+
+// Only the non-textual bits of a plan live here; names, blurbs, features and
+// prices are translated — see copy.pricing.plans (same order).
+const PLAN_META = [
+  { href: ROUTES.auth.register, highlight: false },
+  { href: ROUTES.auth.register, highlight: true },
+  { href: ROUTES.auth.register, highlight: false },
+] as const;
 
 const Pricing: React.FC = () => {
+  const copy = useCopy();
   const [billing, setBilling] = useState<Billing>('annual');
   return (
     <section
@@ -1357,14 +1152,13 @@ const Pricing: React.FC = () => {
         <Reveal>
           <div className="max-w-2xl mx-auto text-center">
             <span className="text-xs font-semibold uppercase tracking-wider text-primary-600 dark:text-primary-400">
-              Simple pricing
+              {copy.pricing.eyebrow}
             </span>
             <h2 className="mt-3 font-display text-3xl md:text-4xl font-bold tracking-tight text-surface-900 dark:text-white">
-              One platform. Transparent plans.
+              {copy.pricing.title}
             </h2>
             <p className="mt-4 text-lg text-surface-600 dark:text-surface-300">
-              No per-feature surprises. Pick a plan that matches your team size — upgrade
-              only when you need to.
+              {copy.pricing.subtitle}
             </p>
           </div>
         </Reveal>
@@ -1374,7 +1168,7 @@ const Pricing: React.FC = () => {
           <div className="mt-8 flex items-center justify-center gap-3">
             <div
               role="tablist"
-              aria-label="Billing period"
+              aria-label={copy.a11y.billingPeriod}
               className="inline-flex p-1 rounded-2xl bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-800 shadow-soft"
             >
               {(['monthly', 'annual'] as const).map((b) => {
@@ -1392,7 +1186,7 @@ const Pricing: React.FC = () => {
                         : 'text-surface-600 dark:text-surface-300 hover:text-surface-900 dark:hover:text-white',
                     )}
                   >
-                    {b === 'monthly' ? 'Monthly' : 'Annual'}
+                    {b === 'monthly' ? copy.pricing.monthly : copy.pricing.annual}
                     {b === 'annual' && (
                       <span
                         className={cn(
@@ -1413,22 +1207,23 @@ const Pricing: React.FC = () => {
         </Reveal>
 
         <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-5">
-          {PLANS.map((p, i) => {
+          {PLAN_META.map((meta, i) => {
+            const p = copy.pricing.plans[i];
             const price = billing === 'annual' ? p.annualPrice : p.monthlyPrice;
             return (
               <Reveal key={p.name} delay={i * 80}>
                 <div
                   className={cn(
                     'relative h-full p-7 rounded-3xl bg-white dark:bg-surface-900 transition-all',
-                    p.highlight
+                    meta.highlight
                       ? 'border-2 border-primary-500 shadow-elevated lg:-translate-y-2'
                       : 'border border-surface-200 dark:border-surface-800 shadow-soft hover:shadow-elevated hover:-translate-y-0.5',
                   )}
                 >
-                  {p.highlight && (
+                  {meta.highlight && (
                     <span className="absolute -top-3 start-6 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-r from-primary-600 to-accent-600 text-white text-xs font-semibold shadow-glow">
                       <Sparkles size={12} />
-                      Most popular
+                      {copy.pricing.mostPopular}
                     </span>
                   )}
                   <div className="font-display text-xl font-semibold text-surface-900 dark:text-white">
@@ -1456,9 +1251,9 @@ const Pricing: React.FC = () => {
                       </li>
                     ))}
                   </ul>
-                  <Link to={p.href} className="block mt-7">
+                  <Link to={meta.href} className="block mt-7">
                     <Button
-                      variant={p.highlight ? 'gradient' : 'outline'}
+                      variant={meta.highlight ? 'gradient' : 'outline'}
                       size="lg"
                       className="w-full"
                     >
@@ -1477,28 +1272,7 @@ const Pricing: React.FC = () => {
 
 // ─── FAQ ─────────────────────────────────────────────────────────────────────
 
-const FAQS = [
-  {
-    q: 'How quickly can my clinic be onboarded?',
-    a: `Most clinics are live on ${BRAND.NAME} in less than a day. We import your existing patient and appointment data for you, and our team walks you through staff training during a 60-minute kickoff call.`,
-  },
-  {
-    q: 'Is patient data stored securely?',
-    a: 'Yes. All traffic is encrypted in transit (TLS 1.3) and at rest (AES-256). Row-level security is enforced at the database layer so each clinic only ever sees its own data, and every clinical-record change is audit-logged with a signed timestamp.',
-  },
-  {
-    q: 'Can I switch from another platform?',
-    a: 'Absolutely. We support imports from spreadsheets and most popular EMRs. During your free trial we’ll migrate your existing patient records, appointments, and stock for you at no extra cost.',
-  },
-  {
-    q: 'Does it work on tablets and phones?',
-    a: `${BRAND.NAME} is fully responsive. The web app runs in any modern browser — desktop, tablet, or phone — and the dental chart, vitals, and prescription editor are all touch-optimized.`,
-  },
-  {
-    q: 'Can I self-host?',
-    a: 'Yes. The Group plan includes a self-hosting option for clinics with strict data-sovereignty requirements. Our team helps you provision and stays on call for upgrades.',
-  },
-];
+// FAQ entries are translated — see copy.faq.items.
 
 const FaqItem: React.FC<{ q: string; a: string; defaultOpen?: boolean }> = ({
   q,
@@ -1543,31 +1317,33 @@ const FaqItem: React.FC<{ q: string; a: string; defaultOpen?: boolean }> = ({
   );
 };
 
-const Faq: React.FC = () => (
+const Faq: React.FC = () => {
+  const copy = useCopy();
+  return (
   <section id="faq" className="relative py-24 lg:py-28 scroll-mt-20">
     <div className="max-w-4xl mx-auto px-6 lg:px-10">
       <Reveal>
         <div className="text-center max-w-2xl mx-auto">
           <span className="text-xs font-semibold uppercase tracking-wider text-primary-600 dark:text-primary-400">
-            Questions, answered
+            {copy.faq.eyebrow}
           </span>
           <h2 className="mt-3 font-display text-3xl md:text-4xl font-bold tracking-tight text-surface-900 dark:text-white">
-            Frequently asked.
+            {copy.faq.title}
           </h2>
           <p className="mt-4 text-lg text-surface-600 dark:text-surface-300">
-            Can&rsquo;t find what you&rsquo;re looking for? Email us at{' '}
+            {copy.faq.subtitleBefore}{' '}
             <a
               href="mailto:hello@medineeo.com"
               className="text-primary-600 dark:text-primary-300 font-medium hover:underline"
             >
               hello@medineeo.com
             </a>
-            .
+            {copy.faq.subtitleAfter}
           </p>
         </div>
       </Reveal>
       <div className="mt-12 space-y-3">
-        {FAQS.map((f, i) => (
+        {copy.faq.items.map((f, i) => (
           <Reveal key={f.q} delay={i * 60}>
             <FaqItem q={f.q} a={f.a} defaultOpen={i === 0} />
           </Reveal>
@@ -1575,11 +1351,14 @@ const Faq: React.FC = () => (
       </div>
     </div>
   </section>
-);
+  );
+};
 
 // ─── Final CTA ───────────────────────────────────────────────────────────────
 
-const FinalCta: React.FC = () => (
+const FinalCta: React.FC = () => {
+  const copy = useCopy();
+  return (
   <section className="relative py-24 lg:py-28">
     <div className="max-w-5xl mx-auto px-6 lg:px-10">
       <Reveal>
@@ -1596,16 +1375,15 @@ const FinalCta: React.FC = () => (
           <div className="relative">
             <Activity size={36} className="mx-auto text-accent-200" aria-hidden />
             <h2 className="mt-5 font-display text-3xl md:text-4xl font-bold tracking-tight">
-              Ready to modernize your clinic?
+              {copy.finalCta.title}
             </h2>
             <p className="mt-4 text-lg text-white/80 max-w-2xl mx-auto">
-              Get your team onboarded in less than a day. We&rsquo;ll migrate your patient
-              records for you.
+              {copy.finalCta.body}
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
               <Link to={ROUTES.auth.register}>
                 <Button variant="accent" size="lg" className="w-full sm:w-auto group">
-                  Start free trial
+                  {copy.finalCta.primary}
                   <ArrowRight
                     size={18}
                     className="ms-2 transition-transform group-hover:translate-x-0.5"
@@ -1618,7 +1396,7 @@ const FinalCta: React.FC = () => (
                   size="lg"
                   className="w-full sm:w-auto !border-white/30 !text-white hover:!bg-white/10"
                 >
-                  Sign in
+                  {copy.finalCta.secondary}
                 </Button>
               </Link>
             </div>
@@ -1627,85 +1405,86 @@ const FinalCta: React.FC = () => (
       </Reveal>
     </div>
   </section>
-);
+  );
+};
 
 // ─── Footer ──────────────────────────────────────────────────────────────────
 
-const Footer: React.FC = () => (
-  <footer className="border-t border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-950">
-    <div className="max-w-7xl mx-auto px-6 lg:px-10 py-12 grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
-      <div className="col-span-2">
-        <Logo size="md" />
-        <p className="mt-3 text-surface-500 dark:text-surface-400 max-w-xs">
-          The operating system for modern medical clinics.
-        </p>
+const Footer: React.FC = () => {
+  const copy = useCopy();
+  const productLinks = [
+    { href: '#product', label: copy.footer.features },
+    { href: '#workflow', label: copy.footer.workflow },
+    { href: '#pricing', label: copy.footer.pricing },
+    { href: '#security', label: copy.footer.security },
+    { href: '#faq', label: copy.footer.faq },
+  ];
+  return (
+    <footer className="border-t border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-950">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 py-12 grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
+        <div className="col-span-2">
+          <Logo size="md" />
+          <p className="mt-3 text-surface-500 dark:text-surface-400 max-w-xs">
+            {copy.footer.tagline}
+          </p>
+        </div>
+        <div>
+          <div className="font-semibold text-surface-900 dark:text-white mb-3">
+            {copy.footer.product}
+          </div>
+          <ul className="space-y-2 text-surface-500 dark:text-surface-400">
+            {productLinks.map((l) => (
+              <li key={l.href}>
+                <a href={l.href} className="hover:text-primary-700 dark:hover:text-primary-300">
+                  {l.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <div className="font-semibold text-surface-900 dark:text-white mb-3">
+            {copy.footer.account}
+          </div>
+          <ul className="space-y-2 text-surface-500 dark:text-surface-400">
+            <li>
+              <Link
+                to={ROUTES.auth.login}
+                className="hover:text-primary-700 dark:hover:text-primary-300"
+              >
+                {copy.actions.signIn}
+              </Link>
+            </li>
+            <li>
+              <Link
+                to={ROUTES.auth.register}
+                className="hover:text-primary-700 dark:hover:text-primary-300"
+              >
+                {copy.actions.createAccount}
+              </Link>
+            </li>
+            <li>
+              <a
+                href="mailto:hello@medineeo.com"
+                className="hover:text-primary-700 dark:hover:text-primary-300"
+              >
+                {copy.actions.contact}
+              </a>
+            </li>
+          </ul>
+        </div>
       </div>
-      <div>
-        <div className="font-semibold text-surface-900 dark:text-white mb-3">Product</div>
-        <ul className="space-y-2 text-surface-500 dark:text-surface-400">
-          <li>
-            <a href="#product" className="hover:text-primary-700 dark:hover:text-primary-300">
-              Features
-            </a>
-          </li>
-          <li>
-            <a href="#workflow" className="hover:text-primary-700 dark:hover:text-primary-300">
-              Workflow
-            </a>
-          </li>
-          <li>
-            <a href="#pricing" className="hover:text-primary-700 dark:hover:text-primary-300">
-              Pricing
-            </a>
-          </li>
-          <li>
-            <a href="#security" className="hover:text-primary-700 dark:hover:text-primary-300">
-              Security
-            </a>
-          </li>
-          <li>
-            <a href="#faq" className="hover:text-primary-700 dark:hover:text-primary-300">
-              FAQ
-            </a>
-          </li>
-        </ul>
+      <div className="border-t border-surface-200 dark:border-surface-800 py-5 text-xs text-surface-400 dark:text-surface-500 text-center">
+        © {new Date().getFullYear()} {BRAND.NAME}. {copy.footer.rights}
       </div>
-      <div>
-        <div className="font-semibold text-surface-900 dark:text-white mb-3">Account</div>
-        <ul className="space-y-2 text-surface-500 dark:text-surface-400">
-          <li>
-            <Link to={ROUTES.auth.login} className="hover:text-primary-700 dark:hover:text-primary-300">
-              Sign in
-            </Link>
-          </li>
-          <li>
-            <Link
-              to={ROUTES.auth.register}
-              className="hover:text-primary-700 dark:hover:text-primary-300"
-            >
-              Create account
-            </Link>
-          </li>
-          <li>
-            <a
-              href="mailto:hello@medineeo.com"
-              className="hover:text-primary-700 dark:hover:text-primary-300"
-            >
-              Contact
-            </a>
-          </li>
-        </ul>
-      </div>
-    </div>
-    <div className="border-t border-surface-200 dark:border-surface-800 py-5 text-xs text-surface-400 dark:text-surface-500 text-center">
-      © {new Date().getFullYear()} {BRAND.NAME}. All rights reserved.
-    </div>
-  </footer>
-);
+    </footer>
+  );
+};
 
 // ─── Scroll-to-top ───────────────────────────────────────────────────────────
 
 const ScrollTopButton: React.FC = () => {
+  const copy = useCopy();
   const visible = useScrolled(640);
   const onClick = useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1713,7 +1492,7 @@ const ScrollTopButton: React.FC = () => {
   return (
     <button
       onClick={onClick}
-      aria-label="Back to top"
+      aria-label={copy.a11y.backToTop}
       className={cn(
         'fixed bottom-6 end-6 z-40 inline-flex items-center justify-center w-11 h-11 rounded-full bg-gradient-to-br from-primary-600 to-primary-700 text-white shadow-elevated hover:shadow-glow transition-all',
         visible

@@ -112,7 +112,7 @@ INSERT INTO appointments (id, clinic_id, patient_id, doctor_id, room_id, appoint
      '00000000-0000-0000-0000-bd0000000002',
      'cleaning',
      date_trunc('day', NOW() - INTERVAL '30 days') + INTERVAL '11 hours',
-     date_trunc('day', NOW() - INTERVAL '30 days') + INTERVAL '11 hours 45 minutes',
+     date_trunc('day', NOW() - INTERVAL '30 days') + INTERVAL '11 hours 30 minutes',
      'completed',
      'Routine prophylaxis. No issues.'),
     ('00000000-0000-0000-0000-a00000000004',
@@ -122,7 +122,7 @@ INSERT INTO appointments (id, clinic_id, patient_id, doctor_id, room_id, appoint
      '00000000-0000-0000-0000-bd0000000001',
      'consultation',
      date_trunc('day', NOW() + INTERVAL '2 days') + INTERVAL '10 hours',
-     date_trunc('day', NOW() + INTERVAL '2 days') + INTERVAL '10 hours 20 minutes',
+     date_trunc('day', NOW() + INTERVAL '2 days') + INTERVAL '10 hours 30 minutes',
      'pending',
      'Asthma follow-up.')
   ON CONFLICT (id) DO NOTHING;

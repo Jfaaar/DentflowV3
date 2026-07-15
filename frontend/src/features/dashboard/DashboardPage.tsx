@@ -199,43 +199,43 @@ export const DashboardPage: React.FC = () => {
             <KpiCard
               tone="vital"
               icon={Wallet}
-              label="Revenue Today"
+              label={t('revenueTodayLabel')}
               value={
                 <>
                   {stats.revenueToday.toLocaleString()}{' '}
                   <span className="text-sm font-normal text-surface-500">DH</span>
                 </>
               }
-              caption={`${stats.revenueMonth.toLocaleString()} DH this month`}
+              caption={t('revenueThisMonth', { amount: stats.revenueMonth.toLocaleString() })}
               sparkline={stats.revenueSparkline}
             />
             <KpiCard
               tone="info"
               icon={CalendarCheck}
-              label="Appointments"
+              label={t('appointmentsLabel')}
               value={
                 <>
                   {stats.todayAppts.length}{' '}
                   <span className="text-sm font-normal text-surface-500">{t('today')}</span>
                 </>
               }
-              caption={`${stats.completionRate}% completed`}
+              caption={t('percentCompleted', { percent: stats.completionRate })}
               sparkline={stats.apptSparkline}
             />
             <KpiCard
               tone="primary"
               icon={Users}
-              label="Active Patients"
+              label={t('activePatientsLabel')}
               value={stats.activePatients}
-              caption={`${stats.newPatientsMonth} new this month`}
+              caption={t('newPatientsThisMonth', { count: stats.newPatientsMonth })}
               sparkline={stats.patientSparkline}
             />
             <KpiCard
               tone={alertsTotal > 0 ? 'alert' : 'vital'}
               icon={Package}
-              label="Cabinet Alerts"
+              label={t('cabinetAlertsLabel')}
               value={alertsTotal}
-              caption={alertsTotal > 0 ? 'Action required' : 'All healthy'}
+              caption={alertsTotal > 0 ? t('actionRequired') : t('allHealthy')}
             />
           </div>
 
@@ -471,7 +471,7 @@ export const DashboardPage: React.FC = () => {
                               {item.name}
                             </p>
                             <p className="text-xs text-red-600 dark:text-red-400">
-                              Low Stock: {item.stock} (Min: {item.minStock})
+                              {t('lowStockDetail', { stock: item.stock, min: item.minStock })}
                             </p>
                           </div>
                         </div>
@@ -497,7 +497,7 @@ export const DashboardPage: React.FC = () => {
                 </div>
                 <div className="p-2 bg-surface-50 dark:bg-surface-800/50 border-t border-surface-100 dark:border-surface-700">
                   <button className="text-xs font-medium text-primary-600 hover:text-primary-700 transition-colors flex items-center justify-center gap-1 w-full py-1.5">
-                    Go to Inventory <ArrowRight size={12} className="rtl:rotate-180" />
+                    {t('goToInventory')} <ArrowRight size={12} className="rtl:rotate-180" />
                   </button>
                 </div>
               </Card>
