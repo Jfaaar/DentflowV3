@@ -1,0 +1,38 @@
+# Render Blueprint — MediNEEO backend API.
+#
+# Use: Render Dashboard → New → Blueprint → point at this repo. Render reads
+# this file and creates the service below. The database is NOT declared here on
+# purpose — use an external managed Postgres (Neon) and paste its POOLED
+# connection string into DATABASE_URL in the dashboard.
+#
+# Frontend is deployed separately on Vercel (see frontend/vercel.json).
+
+services:
+  - type: web
+    name: medineeo-api
+    runtime: docker           # builds the repo-root Dockerfile (NODE_ENV baked in)
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free                # free web services sleep when idle — fine for a demo
+    region: virginia          # match your Neon region (us-east-1) to cut latency
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      # Baked into the Dockerfile too; kept here so it's still correct if you
+      # ever switch this service to a native Node runtime. Without it, the
+      # migration runner performs a DESTRUCTIVE schema reset on every boot.
+      - key: NODE_ENV
+        value: production
+      # Secret — paste the Neon POOLED url, including ?sslmode=require.
+      - key: DATABASE_URL
+        sync: false
+      # DEMO ONLY: there is no real auth, so this makes every caller clinic_admin.
+      # Never serve real patient data with this enabled.
+      - key: BACKEND_DEV_AUTH
+        value: "true"
+      # Set to your Vercel URL after the frontend deploys (comma-separated).
+      - key: CORS_ORIGINS
+        sync: false
+      # The 3.8 MB drug catalogue isn't committed; skip the import on boot.
+      - key: SKIP_MEDICAMENTS_SEED
+        value: "true"
